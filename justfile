@@ -10,9 +10,13 @@ IOS_DESTINATION := "generic/platform=iOS"
 default:
     just --list --unsorted
 
-# Run dev script
-dev-build-cmd:
-    cargo run -- build --schema "$TEST_SCHEMA" --destination "$MACOS_DESTINATION" --project "$TEST_PROJECT"
+# Run dev command for macOS
+dev-build-mac-cmd:
+    cargo run -- build --schema "$TEST_SCHEMA" --destination "$MACOS_DESTINATION" --project "$TEST_PROJECT" --configuration debug
+
+# Run dev command for iOS
+dev-build-ios-cmd:
+    cargo run -- build --schema "$TEST_SCHEMA" --destination "$IOS_DESTINATION" --project "$TEST_PROJECT" --configuration release
 
 # Run help command
 help:
