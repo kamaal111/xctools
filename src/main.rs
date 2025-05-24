@@ -49,20 +49,21 @@ enum Configuration {
 
 fn main() {
     let args = Args::parse();
-
-    match args.command {
+    let output_result: anyhow::Result<String> = match args.command {
         Commands::Build {
             schema,
             destination,
             configuration,
             project,
             workspace,
-        } => {
-            if let Err(e) = build(schema, destination, configuration, project, workspace) {
-                eprintln!("Error: {}", e);
-                std::process::exit(1);
-            }
+        } => build(schema, destination, configuration, project, workspace),
+    };
+    match output_result {
+        Err(error) => {
+            eprintln!("Error: {}", error);
+            std::process::exit(1);
         }
+        Ok(output) => print!("{}", output),
     }
 }
 
@@ -97,26 +98,31 @@ struct BuildTarget {
 
 impl BuildTarget {
     fn project_or_workspace_string(&self) -> anyhow::Result<String> {
-        match &self.project {
-            Some(some_project) => Ok(some_project.clone()),
-            None => self
-                .workspace
-                .clone()
-                // Invariant, should actually have been pre validated by clap
-                .ok_or_else(|| anyhow::anyhow!("Neither project nor workspace was provided")),
+        if let Some(project) = &self.project {
+            return Ok(project.clone());
         }
+
+        if let Some(workspace) = &self.workspace {
+            return Ok(workspace.clone());
+        }
+
+        Err(anyhow::anyhow!(
+            "Neither project nor workspace was provided"
+        ))
     }
 
     fn xcode_command_flag(&self) -> anyhow::Result<String> {
-        match &self.project {
-            Some(some_project) => Ok(format!("-project {}", some_project.clone())),
-            None => match self.workspace.clone() {
-                None => Err(anyhow::anyhow!(
-                    "Neither project nor workspace was provided"
-                )),
-                Some(some_workspace) => Ok(format!("-workspace {}", some_workspace)),
-            },
+        if let Some(project) = &self.project {
+            return Ok(format!("-project {}", project.clone()));
         }
+
+        if let Some(workspace) = &self.workspace {
+            return Ok(format!("-workspace {}", workspace));
+        }
+
+        Err(anyhow::anyhow!(
+            "Neither project nor workspace was provided"
+        ))
     }
 }
 
@@ -126,10 +132,10 @@ fn build(
     configuration: Configuration,
     project: Option<String>,
     workspace: Option<String>,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<String> {
     let target = BuildTarget { project, workspace };
     let project_or_workspace = match target.project_or_workspace_string() {
-        Ok(path) => path,
+        Ok(project_or_workspace) => project_or_workspace,
         Err(_) => anyhow::bail!("Failed to determine project or workspace"),
     };
     let command = match build_command(schema, destination, configuration, target) {
@@ -147,8 +153,8 @@ fn build(
         Err(error) => return Err(error),
         Ok(output) => output,
     };
-    println!("{:?}", String::from_utf8(output.stderr));
-    Ok(())
+
+    String::from_utf8(output.stdout).with_context(|| "Failed to decode output")
 }
 
 fn build_command(
@@ -162,7 +168,7 @@ fn build_command(
         Ok(xcode_command_flag) => xcode_command_flag,
     };
     let command = format!(
-        "xcodebuild build -scheme {} -configuration {} -destination \"{}\" {}",
+        "xcodebuild build -scheme {} -configuration {} -destination {} {}",
         schema,
         configuration.command_string(),
         destination,
