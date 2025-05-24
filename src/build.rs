@@ -41,7 +41,7 @@ pub fn build(
 }
 
 impl BuildTarget {
-    pub fn new(project: Option<String>, workspace: Option<String>) -> Self {
+    fn new(project: Option<String>, workspace: Option<String>) -> Self {
         Self { project, workspace }
     }
 
