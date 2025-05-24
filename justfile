@@ -10,6 +10,10 @@ IOS_DESTINATION := "generic/platform=iOS"
 default:
     just --list --unsorted
 
+# Test project
+test:
+    cargo test
+
 # Run dev command for macOS
 dev-build-mac-cmd:
     cargo run -- build --schema "$TEST_SCHEMA" --destination "$MACOS_DESTINATION" --project "$TEST_PROJECT" --configuration debug
