@@ -4,6 +4,7 @@ TEST_SCHEMA := "TestXcodeApp"
 TEST_PROJECT := "TestXcodeApp/TestXcodeApp.xcodeproj"
 
 MACOS_DESTINATION := "platform=macOS"
+IOS_DESTINATION := "generic/platform=iOS"
 
 # List available commands
 default:
@@ -11,7 +12,7 @@ default:
 
 # Run dev script
 dev-build-cmd:
-    cargo run -- build --schema $TEST_SCHEMA --destination $MACOS_DESTINATION --project $TEST_PROJECT
+    cargo run -- build --schema "$TEST_SCHEMA" --destination "$MACOS_DESTINATION" --project "$TEST_PROJECT"
 
 # Run help command
 help:
