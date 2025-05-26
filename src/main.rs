@@ -43,14 +43,20 @@ enum Commands {
     },
 
     /// Bump version of Xcode project
+    #[command(group(
+        ArgGroup::new("version_params")
+            .required(true)
+            .multiple(true)
+            .args(["build_number", "version_number"]),
+    ))]
     BumpVersion {
         /// Build number
         #[arg(short, long)]
-        build_number: i32,
+        build_number: Option<i32>,
 
         /// Version number
         #[arg(short, long, value_parser = ValueParser::new(semver::Version::parse))]
-        version_number: semver::Version,
+        version_number: Option<semver::Version>,
     },
 }
 
