@@ -1,6 +1,9 @@
-use clap::{ArgGroup, Parser, Subcommand, ValueEnum};
-
 mod build;
+mod bump_version;
+
+use crate::build::build;
+use crate::bump_version::bump_version;
+use clap::{ArgGroup, Parser, Subcommand, ValueEnum, builder::ValueParser};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -38,6 +41,17 @@ enum Commands {
         #[arg(short, long)]
         workspace: Option<String>,
     },
+
+    /// Bump version of Xcode project
+    BumpVersion {
+        /// Build number
+        #[arg(short, long)]
+        build_number: i32,
+
+        /// Version number
+        #[arg(short, long, value_parser = ValueParser::new(semver::Version::parse))]
+        version_number: semver::Version,
+    },
 }
 
 #[derive(ValueEnum, Clone, Debug)]
@@ -55,7 +69,11 @@ fn main() {
             configuration,
             project,
             workspace,
-        } => build::build(schema, destination, configuration, project, workspace),
+        } => build(&schema, &destination, &configuration, &project, &workspace),
+        Commands::BumpVersion {
+            build_number,
+            version_number,
+        } => bump_version(&build_number, &version_number),
     };
     match output_result {
         Err(error) => {

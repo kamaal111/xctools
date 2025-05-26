@@ -10,18 +10,18 @@ pub struct BuildTarget {
 }
 
 pub fn build(
-    schema: String,
-    destination: String,
-    configuration: Configuration,
-    project: Option<String>,
-    workspace: Option<String>,
+    schema: &String,
+    destination: &String,
+    configuration: &Configuration,
+    project: &Option<String>,
+    workspace: &Option<String>,
 ) -> anyhow::Result<String> {
-    let target = BuildTarget::new(project, workspace);
+    let target = BuildTarget::new(project.clone(), workspace.clone());
     let project_or_workspace = match target.project_or_workspace_string() {
         Ok(project_or_workspace) => project_or_workspace,
         Err(_) => anyhow::bail!("Failed to determine project or workspace"),
     };
-    let command = match build_command(schema, destination, configuration, target) {
+    let command = match build_command(schema, destination, configuration, &target) {
         Ok(command) => command,
         Err(_) => anyhow::bail!("Failed to build command"),
     };
@@ -75,10 +75,10 @@ impl BuildTarget {
 }
 
 fn build_command(
-    schema: String,
-    destination: String,
-    configuration: Configuration,
-    target: BuildTarget,
+    schema: &String,
+    destination: &String,
+    configuration: &Configuration,
+    target: &BuildTarget,
 ) -> anyhow::Result<String> {
     let xcode_command_flag = match target.xcode_command_flag() {
         Err(error) => return Err(error),
@@ -174,10 +174,10 @@ mod tests {
     fn test_build_command_with_project() {
         let target = BuildTarget::new(Some(String::from("MyApp.xcodeproj")), None);
         let command = build_command(
-            String::from("MyApp"),
-            String::from("iOS Simulator,name=iPhone 15 Pro"),
-            Configuration::Debug,
-            target,
+            &String::from("MyApp"),
+            &String::from("iOS Simulator,name=iPhone 15 Pro"),
+            &Configuration::Debug,
+            &target,
         )
         .unwrap();
 
@@ -189,10 +189,10 @@ mod tests {
     fn test_build_command_with_workspace() {
         let target = BuildTarget::new(None, Some(String::from("MyApp.xcworkspace")));
         let command = build_command(
-            String::from("MyApp"),
-            String::from("iOS Simulator,name=iPhone 15 Pro"),
-            Configuration::Release,
-            target,
+            &String::from("MyApp"),
+            &String::from("iOS Simulator,name=iPhone 15 Pro"),
+            &Configuration::Release,
+            &target,
         )
         .unwrap();
 
@@ -206,10 +206,10 @@ mod tests {
 
         // Test iOS device
         let command = build_command(
-            String::from("MyApp"),
-            String::from("generic/platform=iOS"),
-            Configuration::Release,
-            target,
+            &String::from("MyApp"),
+            &String::from("generic/platform=iOS"),
+            &Configuration::Release,
+            &target,
         )
         .unwrap();
         let expected = "xcodebuild build -scheme MyApp -configuration Release -destination 'generic/platform=iOS' -project MyApp.xcodeproj";
@@ -218,10 +218,10 @@ mod tests {
         // Test macOS
         let target = BuildTarget::new(Some(String::from("MyApp.xcodeproj")), None);
         let command = build_command(
-            String::from("MyApp"),
-            String::from("platform=macOS"),
-            Configuration::Debug,
-            target,
+            &String::from("MyApp"),
+            &String::from("platform=macOS"),
+            &Configuration::Debug,
+            &target,
         )
         .unwrap();
         let expected = "xcodebuild build -scheme MyApp -configuration Debug -destination 'platform=macOS' -project MyApp.xcodeproj";
@@ -232,10 +232,10 @@ mod tests {
     fn test_build_command_with_invalid_target() {
         let target = BuildTarget::new(None, None);
         let result = build_command(
-            String::from("MyApp"),
-            String::from("iOS Simulator,name=iPhone 15 Pro"),
-            Configuration::Debug,
-            target,
+            &String::from("MyApp"),
+            &String::from("iOS Simulator,name=iPhone 15 Pro"),
+            &Configuration::Debug,
+            &target,
         );
 
         assert!(result.is_err());
@@ -255,10 +255,10 @@ mod tests {
     fn test_build_command_with_special_characters_in_scheme() {
         let target = BuildTarget::new(Some(String::from("MyApp.xcodeproj")), None);
         let command = build_command(
-            String::from("My App With Spaces"),
-            String::from("iOS Simulator,name=iPhone 15 Pro"),
-            Configuration::Debug,
-            target,
+            &String::from("My App With Spaces"),
+            &String::from("iOS Simulator,name=iPhone 15 Pro"),
+            &Configuration::Debug,
+            &target,
         )
         .unwrap();
 
