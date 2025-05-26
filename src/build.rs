@@ -101,31 +101,31 @@ mod tests {
 
     #[test]
     fn test_build_target_new() {
-        let target = BuildTarget::new(Some("MyApp.xcodeproj".to_string()), None);
-        assert_eq!(target.project, Some("MyApp.xcodeproj".to_string()));
+        let target = BuildTarget::new(Some(String::from("MyApp.xcodeproj")), None);
+        assert_eq!(target.project, Some(String::from("MyApp.xcodeproj")));
         assert_eq!(target.workspace, None);
 
-        let target = BuildTarget::new(None, Some("MyApp.xcworkspace".to_string()));
+        let target = BuildTarget::new(None, Some(String::from("MyApp.xcworkspace")));
         assert_eq!(target.project, None);
-        assert_eq!(target.workspace, Some("MyApp.xcworkspace".to_string()));
+        assert_eq!(target.workspace, Some(String::from("MyApp.xcworkspace")));
     }
 
     #[test]
     fn test_build_target_project_or_workspace_string() {
         // Test with project
-        let target = BuildTarget::new(Some("MyApp.xcodeproj".to_string()), None);
+        let target = BuildTarget::new(Some(String::from("MyApp.xcodeproj")), None);
         let result = target.project_or_workspace_string().unwrap();
         assert_eq!(result, "MyApp.xcodeproj");
 
         // Test with workspace
-        let target = BuildTarget::new(None, Some("MyApp.xcworkspace".to_string()));
+        let target = BuildTarget::new(None, Some(String::from("MyApp.xcworkspace")));
         let result = target.project_or_workspace_string().unwrap();
         assert_eq!(result, "MyApp.xcworkspace");
 
         // Test with both (should return project)
         let target = BuildTarget::new(
-            Some("MyApp.xcodeproj".to_string()),
-            Some("MyApp.xcworkspace".to_string()),
+            Some(String::from("MyApp.xcodeproj")),
+            Some(String::from("MyApp.xcworkspace")),
         );
         let result = target.project_or_workspace_string().unwrap();
         assert_eq!(result, "MyApp.xcodeproj");
@@ -143,19 +143,19 @@ mod tests {
     #[test]
     fn test_build_target_xcode_command_flag() {
         // Test with project
-        let target = BuildTarget::new(Some("MyApp.xcodeproj".to_string()), None);
+        let target = BuildTarget::new(Some(String::from("MyApp.xcodeproj")), None);
         let result = target.xcode_command_flag().unwrap();
         assert_eq!(result, "-project MyApp.xcodeproj");
 
         // Test with workspace
-        let target = BuildTarget::new(None, Some("MyApp.xcworkspace".to_string()));
+        let target = BuildTarget::new(None, Some(String::from("MyApp.xcworkspace")));
         let result = target.xcode_command_flag().unwrap();
         assert_eq!(result, "-workspace MyApp.xcworkspace");
 
         // Test with both (should return project)
         let target = BuildTarget::new(
-            Some("MyApp.xcodeproj".to_string()),
-            Some("MyApp.xcworkspace".to_string()),
+            Some(String::from("MyApp.xcodeproj")),
+            Some(String::from("MyApp.xcworkspace")),
         );
         let result = target.xcode_command_flag().unwrap();
         assert_eq!(result, "-project MyApp.xcodeproj");
@@ -172,10 +172,10 @@ mod tests {
 
     #[test]
     fn test_build_command_with_project() {
-        let target = BuildTarget::new(Some("MyApp.xcodeproj".to_string()), None);
+        let target = BuildTarget::new(Some(String::from("MyApp.xcodeproj")), None);
         let command = build_command(
-            "MyApp".to_string(),
-            "iOS Simulator,name=iPhone 15 Pro".to_string(),
+            String::from("MyApp"),
+            String::from("iOS Simulator,name=iPhone 15 Pro"),
             Configuration::Debug,
             target,
         )
@@ -187,10 +187,10 @@ mod tests {
 
     #[test]
     fn test_build_command_with_workspace() {
-        let target = BuildTarget::new(None, Some("MyApp.xcworkspace".to_string()));
+        let target = BuildTarget::new(None, Some(String::from("MyApp.xcworkspace")));
         let command = build_command(
-            "MyApp".to_string(),
-            "iOS Simulator,name=iPhone 15 Pro".to_string(),
+            String::from("MyApp"),
+            String::from("iOS Simulator,name=iPhone 15 Pro"),
             Configuration::Release,
             target,
         )
@@ -202,12 +202,12 @@ mod tests {
 
     #[test]
     fn test_build_command_with_different_destinations() {
-        let target = BuildTarget::new(Some("MyApp.xcodeproj".to_string()), None);
+        let target = BuildTarget::new(Some(String::from("MyApp.xcodeproj")), None);
 
         // Test iOS device
         let command = build_command(
-            "MyApp".to_string(),
-            "generic/platform=iOS".to_string(),
+            String::from("MyApp"),
+            String::from("generic/platform=iOS"),
             Configuration::Release,
             target,
         )
@@ -216,15 +216,15 @@ mod tests {
         assert_eq!(command, expected);
 
         // Test macOS
-        let target = BuildTarget::new(Some("MyApp.xcodeproj".to_string()), None);
+        let target = BuildTarget::new(Some(String::from("MyApp.xcodeproj")), None);
         let command = build_command(
-            "MyApp".to_string(),
-            "generic/platform=macOS".to_string(),
+            String::from("MyApp"),
+            String::from("platform=macOS"),
             Configuration::Debug,
             target,
         )
         .unwrap();
-        let expected = "xcodebuild build -scheme MyApp -configuration Debug -destination 'generic/platform=macOS' -project MyApp.xcodeproj";
+        let expected = "xcodebuild build -scheme MyApp -configuration Debug -destination 'platform=macOS' -project MyApp.xcodeproj";
         assert_eq!(command, expected);
     }
 
@@ -232,8 +232,8 @@ mod tests {
     fn test_build_command_with_invalid_target() {
         let target = BuildTarget::new(None, None);
         let result = build_command(
-            "MyApp".to_string(),
-            "iOS Simulator,name=iPhone 15 Pro".to_string(),
+            String::from("MyApp"),
+            String::from("iOS Simulator,name=iPhone 15 Pro"),
             Configuration::Debug,
             target,
         );
@@ -253,10 +253,10 @@ mod tests {
 
     #[test]
     fn test_build_command_with_special_characters_in_scheme() {
-        let target = BuildTarget::new(Some("MyApp.xcodeproj".to_string()), None);
+        let target = BuildTarget::new(Some(String::from("MyApp.xcodeproj")), None);
         let command = build_command(
-            "My App With Spaces".to_string(),
-            "iOS Simulator,name=iPhone 15 Pro".to_string(),
+            String::from("My App With Spaces"),
+            String::from("iOS Simulator,name=iPhone 15 Pro"),
             Configuration::Debug,
             target,
         )
