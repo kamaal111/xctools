@@ -2,6 +2,23 @@
 
 A command-line tool for working with Xcode projects and workspaces. Provides utilities for building, managing, and automating common Xcode development tasks.
 
+- [xctools](#xctools)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Build Command](#build-command)
+      - [Required Arguments](#required-arguments)
+      - [Optional Arguments](#optional-arguments)
+      - [Examples](#examples)
+      - [Common Destinations](#common-destinations)
+    - [Bump Version Command](#bump-version-command)
+      - [Options](#options)
+      - [Examples](#examples-1)
+  - [Development](#development)
+    - [Building from Source](#building-from-source)
+    - [Running Tests](#running-tests)
+    - [Development Build](#development-build)
+  - [License](#license)
+
 ## Installation
 
 Clone the repository and build the project:
