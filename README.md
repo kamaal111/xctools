@@ -66,6 +66,41 @@ xctools build --schema MyApp --destination "generic/platform=iOS" --project MyAp
 -   Apple TV Simulator: `"tvOS Simulator,name=Apple TV"`
 -   Apple Watch Simulator: `"watchOS Simulator,name=Apple Watch Series 9 (45mm)"`
 
+### Bump Version Command
+
+Bump the version of an Xcode project.
+
+```bash
+xctools bump-version [OPTIONS]
+```
+
+#### Options
+
+You must provide at least one of the following options:
+
+-   `--build-number, -b <BUILD_NUMBER>`: The build number (e.g., 123).
+-   `--version-number, -v <VERSION_NUMBER>`: The version number in semver format (e.g., 1.2.3).
+
+#### Examples
+
+Set a new build number:
+
+```bash
+xctools bump-version --build-number 10
+```
+
+Set a new version number:
+
+```bash
+xctools bump-version --version-number 1.0.2
+```
+
+Set both build number and version number:
+
+```bash
+xctools bump-version --build-number 10 --version-number 1.0.2
+```
+
 ## Development
 
 This project is designed to be extensible with additional Xcode automation commands. Currently supports building projects and workspaces, with plans to add more utilities for common Xcode development workflows.
