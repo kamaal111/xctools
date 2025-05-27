@@ -38,13 +38,17 @@ build-dev:
 test-cov-html-open:
     cargo llvm-cov --open
 
-# Run dev command for macOS
+# Run dev command to build for macOS
 dev-build-mac-cmd:
     cargo run -- build --schema "$TEST_SCHEMA" --destination "$MACOS_DESTINATION" --project "$TEST_PROJECT" --configuration debug
 
-# Run dev command for iOS
+# Run dev command to build for iOS
 dev-build-ios-cmd:
     cargo run -- build --schema "$TEST_SCHEMA" --destination "$IOS_DESTINATION" --project "$TEST_PROJECT" --configuration release
+
+# Run dev command to bump version
+dev-bump-version-cmd:
+    cargo run -- bump-version --version-number 1.0.1 --build-number 2
 
 # Run help command
 help:
