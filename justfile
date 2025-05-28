@@ -14,6 +14,10 @@ default:
 test:
     cargo test
 
+# Run integration tests
+test-integration:
+    cargo test --test integration_tests
+
 # Test with coverage
 test-cov:
     cargo llvm-cov
