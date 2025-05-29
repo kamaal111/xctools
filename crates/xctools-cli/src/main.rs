@@ -31,7 +31,7 @@ enum Commands {
         #[arg(short, long, default_value_t = Configuration::default())]
         configuration: Configuration,
 
-        /// Xcode project file (.xcodeproj)
+        /// Xcode project folder (.xcodeproj)
         #[arg(short, long)]
         project: Option<String>,
 
@@ -59,7 +59,15 @@ enum Commands {
 
     /// Generate acknowledgements file
     #[command()]
-    Acknowledgements {},
+    Acknowledgements {
+        /// App name
+        #[arg(short, long)]
+        app_name: String,
+
+        /// Generated acknowledgements file output destination
+        #[arg(short, long)]
+        output: String,
+    },
 }
 
 fn main() {
@@ -76,7 +84,7 @@ fn main() {
             build_number,
             version_number,
         } => bump_version(&build_number, &version_number),
-        Commands::Acknowledgements {} => acknowledgements(),
+        Commands::Acknowledgements { app_name, output } => acknowledgements(&app_name, &output),
     };
     match output_result {
         Err(error) => {

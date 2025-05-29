@@ -74,6 +74,10 @@ dev-bump-version-cmd:
 help:
     cargo run -- --help
 
+# Run help command for subcommand
+help-cmd command:
+    cargo run -- {{ command }} --help
+
 # Bootstrap project
 Bootstrap: install-rust install-cov-tool
 
