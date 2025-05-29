@@ -1,143 +1,128 @@
-# xctools
+# XCTools
 
-A command-line tool for working with Xcode projects and workspaces. Provides utilities for building, managing, and automating common Xcode development tasks.
+A command-line tool for Xcode project management, structured as a mini monorepo with separate libraries for each command.
 
-- [xctools](#xctools)
+- [XCTools](#xctools)
+  - [Overview](#overview)
+  - [Monorepo Structure](#monorepo-structure)
   - [Installation](#installation)
   - [Usage](#usage)
     - [Build Command](#build-command)
-      - [Required Arguments](#required-arguments)
-      - [Optional Arguments](#optional-arguments)
-      - [Examples](#examples)
-      - [Common Destinations](#common-destinations)
     - [Bump Version Command](#bump-version-command)
-      - [Options](#options)
-      - [Examples](#examples-1)
   - [Development](#development)
-    - [Building from Source](#building-from-source)
-    - [Running Tests](#running-tests)
-    - [Development Build](#development-build)
+    - [Building](#building)
+    - [Testing](#testing)
+    - [Using Just](#using-just)
   - [License](#license)
+
+## Overview
+
+XCTools provides utilities for working with Xcode projects:
+- **Build**: Execute xcodebuild commands with various configurations
+- **Bump Version**: Update project version numbers and build numbers
+
+## Monorepo Structure
+
+This project is organized as a Cargo workspace with separate crates:
+
+```
+xctools/
+├── Cargo.toml                    # Workspace root
+├── crates/
+│   ├── xctools-build/           # Build command library
+│   ├── xctools-bump-version/    # Version bumping library  
+│   └── xctools-cli/             # Main CLI application
+└── MONOREPO.md                  # Detailed monorepo documentation
+```
+
+- **`xctools-build`**: Library for Xcode build operations
+- **`xctools-bump-version`**: Library for version management  
+- **`xctools-cli`**: Main CLI application that combines the libraries
+
+See [MONOREPO.md](MONOREPO.md) for detailed information about the structure and benefits.
 
 ## Installation
 
-Clone the repository and build the project:
-
 ```bash
-git clone <repository-url>
-cd xctools
-cargo build --release
+cargo install --path crates/xctools-cli
 ```
 
-The binary will be available at `target/release/xctools`.
+Or build from source:
+
+```bash
+cargo build --release
+# Binary will be at target/release/xctools
+```
 
 ## Usage
 
-xctools provides several commands for working with Xcode projects and workspaces.
-
 ### Build Command
 
-Build an Xcode project or workspace with the specified configuration.
-
 ```bash
-xctools build [OPTIONS] --schema <SCHEMA> --destination <DESTINATION> <--project <PROJECT>|--workspace <WORKSPACE>>
-```
-
-#### Required Arguments
-
--   `--schema, -s <SCHEMA>`: The Xcode scheme to build
--   `--destination, -d <DESTINATION>`: The build destination (e.g., "iOS Simulator,name=iPhone 15 Pro")
--   Either `--project` or `--workspace` (mutually exclusive):
-    -   `--project, -p <PROJECT>`: Xcode project file (.xcodeproj)
-    -   `--workspace, -w <WORKSPACE>`: Xcode workspace file (.xcworkspace)
-
-#### Optional Arguments
-
--   `--configuration, -c <CONFIGURATION>`: Build configuration [default: debug] [possible values: debug, release]
-
-#### Examples
-
-Build a project with Debug configuration:
-
-```bash
+# Build with project file
 xctools build --schema MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj
+
+# Build with workspace file  
+xctools build --schema MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --workspace MyApp.xcworkspace
+
+# Build with specific configuration
+xctools build --schema MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj --configuration release
 ```
-
-Build a workspace with Release configuration:
-
-```bash
-xctools build --schema MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --workspace MyApp.xcworkspace --configuration release
-```
-
-Build for a physical device:
-
-```bash
-xctools build --schema MyApp --destination "generic/platform=iOS" --project MyApp.xcodeproj --configuration release
-```
-
-#### Common Destinations
-
--   iOS Simulator: `"iOS Simulator,name=iPhone 15 Pro"`
--   iOS Device: `"generic/platform=iOS"`
--   macOS: `"generic/platform=macOS"`
--   Apple TV Simulator: `"tvOS Simulator,name=Apple TV"`
--   Apple Watch Simulator: `"watchOS Simulator,name=Apple Watch Series 9 (45mm)"`
 
 ### Bump Version Command
 
-Bump the version of an Xcode project.
-
 ```bash
-xctools bump-version [OPTIONS]
-```
+# Bump build number only
+xctools bump-version --build-number 42
 
-#### Options
+# Bump version number only
+xctools bump-version --version-number 2.1.0
 
-You must provide at least one of the following options:
-
--   `--build-number, -b <BUILD_NUMBER>`: The build number (e.g., 123).
--   `--version-number, -v <VERSION_NUMBER>`: The version number in semver format (e.g., 1.2.3).
-
-#### Examples
-
-Set a new build number:
-
-```bash
-xctools bump-version --build-number 10
-```
-
-Set a new version number:
-
-```bash
-xctools bump-version --version-number 1.0.2
-```
-
-Set both build number and version number:
-
-```bash
-xctools bump-version --build-number 10 --version-number 1.0.2
+# Bump both
+xctools bump-version --build-number 42 --version-number 2.1.0
 ```
 
 ## Development
 
-This project is designed to be extensible with additional Xcode automation commands. Currently supports building projects and workspaces, with plans to add more utilities for common Xcode development workflows.
-
-### Building from Source
+### Building
 
 ```bash
+# Build all crates
 cargo build
+
+# Build specific crate
+just build-crate xctools-cli
 ```
 
-### Running Tests
+### Testing
 
 ```bash
+# Run all tests
 cargo test
+
+# Run unit tests only
+just test-units
+
+# Run tests for specific crate
+just test-crate xctools-build
 ```
 
-### Development Build
+### Using Just
+
+This project includes a justfile with common commands:
 
 ```bash
-cargo run -- build --help
+# See available commands
+just
+
+# Run tests with coverage
+just test-cov
+
+# Build release version
+just build
+
+# Test specific crate
+just test-crate xctools-bump-version
 ```
 
 ## License

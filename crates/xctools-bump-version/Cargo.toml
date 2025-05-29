@@ -1,0 +1,14 @@
+[package]
+name = "xctools-bump-version"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { workspace = true }
+semver = { workspace = true }
+glob = { workspace = true }
+
+[dev-dependencies]
+assert_cmd = { workspace = true }
+predicates = { workspace = true }
+tempfile = { workspace = true }

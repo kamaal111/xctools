@@ -1,0 +1,21 @@
+[package]
+name = "xctools-cli"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "xctools"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+semver = { workspace = true }
+xctools-build = { path = "../xctools-build" }
+xctools-bump-version = { path = "../xctools-bump-version" }
+xctools-acknowledgements = { path = "../xctools-acknowledgements" }
+
+[dev-dependencies]
+assert_cmd = { workspace = true }
+predicates = { workspace = true }
+tempfile = { workspace = true }

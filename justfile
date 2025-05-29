@@ -1,7 +1,7 @@
 set export
 
 TEST_SCHEMA := "TestXcodeApp"
-TEST_PROJECT := "TestXcodeApp/TestXcodeApp.xcodeproj"
+TEST_PROJECT := "crates/xctools-cli/TestXcodeApp/TestXcodeApp.xcodeproj"
 
 MACOS_DESTINATION := "platform=macOS"
 IOS_DESTINATION := "generic/platform=iOS"
@@ -14,9 +14,17 @@ default:
 test:
     cargo test
 
+# Test specific crate
+test-crate crate:
+    cargo test -p {{ crate }}
+
 # Run integration tests
 test-integration:
     cargo test --test integration_tests
+
+# Run unit tests for all crates
+test-units:
+    cargo test --lib
 
 # Test with coverage
 test-cov:
@@ -34,9 +42,17 @@ test-cov-json:
 build:
     cargo build --release
 
+# Build specific crate
+build-crate crate:
+    cargo build -p {{ crate }} --release
+
 # Build project in debug
 build-dev:
     cargo build
+
+# Build specific crate in debug
+build-dev-crate crate:
+    cargo build -p {{ crate }}
 
 # Test with coverage and open HTML
 test-cov-html-open:

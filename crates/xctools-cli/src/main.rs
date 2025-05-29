@@ -1,9 +1,7 @@
-mod build;
-mod bump_version;
-
-use crate::build::build;
-use crate::bump_version::bump_version;
-use clap::{ArgGroup, Parser, Subcommand, ValueEnum, builder::ValueParser};
+use clap::{ArgGroup, Parser, Subcommand, builder::ValueParser};
+use xctools_acknowledgements::acknowledgements;
+use xctools_build::{Configuration, build};
+use xctools_bump_version::bump_version;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -58,12 +56,10 @@ enum Commands {
         #[arg(short, long, value_parser = ValueParser::new(semver::Version::parse))]
         version_number: Option<semver::Version>,
     },
-}
 
-#[derive(ValueEnum, Clone, Debug)]
-pub enum Configuration {
-    Debug,
-    Release,
+    /// Generate acknowledgements file
+    #[command()]
+    Acknowledgements {},
 }
 
 fn main() {
@@ -80,6 +76,7 @@ fn main() {
             build_number,
             version_number,
         } => bump_version(&build_number, &version_number),
+        Commands::Acknowledgements {} => acknowledgements(),
     };
     match output_result {
         Err(error) => {
@@ -87,29 +84,5 @@ fn main() {
             std::process::exit(1);
         }
         Ok(output) => print!("{}", output),
-    }
-}
-
-impl Configuration {
-    fn command_string(&self) -> String {
-        match self {
-            Configuration::Debug => String::from("Debug"),
-            Configuration::Release => String::from("Release"),
-        }
-    }
-}
-
-impl Default for Configuration {
-    fn default() -> Self {
-        Self::Debug
-    }
-}
-
-impl std::fmt::Display for Configuration {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Configuration::Debug => write!(f, "debug"),
-            Configuration::Release => write!(f, "release"),
-        }
     }
 }
