@@ -1,18 +1,19 @@
 use anyhow::{Context, Result, anyhow};
 use glob::glob;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{
-    collections::HashMap,
-    ffi::OsString,
+    collections::{BTreeMap, HashMap},
     path::PathBuf,
     process::{Command, Stdio},
 };
 
 pub fn acknowledgements(app_name: &String, output: &String) -> Result<String> {
     let packages_directory = find_derived_data_for_app(app_name)?.join("SourcePackages");
-    let packages_licenses = get_packages_licenses(&packages_directory.join("checkouts"));
+    let packages_licenses = get_packages_licenses(&packages_directory.join("checkouts"))?;
     let packages_urls = get_packages_urls(&packages_directory.join("workspace-state.json"))?;
-    println!("🐸🐸🐸 {:?}", packages_licenses);
+    let package_acknowledgements =
+        make_package_acknowledgements(&packages_urls, &packages_licenses);
+    println!("🐸🐸🐸 {:?}", package_acknowledgements);
 
     Ok(String::from(""))
 }
@@ -39,42 +40,106 @@ struct PackageRef {
     location: String,
 }
 
+#[derive(Debug, Serialize)]
 struct PackageAcknowledgement {
     name: String,
-    license: String,
+    license: Option<String>,
     author: String,
     url: String,
 }
 
-fn get_packages_urls(workspace_state_url: &PathBuf) -> Result<HashMap<String, String>> {
-    let workspace_state_json_content = std::fs::read_to_string(workspace_state_url)
-        .map_err(|e| anyhow!(format!("Failed to read workspace-state.json; error='{}'", e)))?;
-    let workspace_state: WorkspaceState = serde_json::from_str(&workspace_state_json_content)
-        .map_err(|e| anyhow!(format!("Failed to parse workspace-state.json; error='{}'", e)))?;
+impl PackageAcknowledgement {
+    fn new(
+        name: String,
+        license: Option<String>,
+        author: String,
+        url: String,
+    ) -> PackageAcknowledgement {
+        PackageAcknowledgement {
+            name,
+            license,
+            author,
+            url,
+        }
+    }
+}
 
-    let packages = workspace_state
-        .object
-        .dependencies
+fn make_package_acknowledgements(
+    packages_urls: &BTreeMap<String, String>,
+    package_licenses: &HashMap<String, String>,
+) -> Vec<PackageAcknowledgement> {
+    packages_urls
         .iter()
-        .fold(HashMap::new(), |mut acc, dep| {
-            acc.insert(dep.package_ref.name.clone(), dep.package_ref.location.clone());
+        .fold(Vec::new(), |mut acc, (name, url)| {
+            let name = name.clone();
+            let url = url.clone();
+            let license = package_licenses.get(&name).cloned();
+            let url_parts: Vec<_> = url.split("/").collect();
+            let author = url_parts[url_parts.len() - 2].to_string();
+            let entry = PackageAcknowledgement::new(name, license, author, url);
+            acc.push(entry);
+
             acc
-        });
+        })
+}
+
+fn get_packages_urls(workspace_state_url: &PathBuf) -> Result<BTreeMap<String, String>> {
+    let workspace_state_json_content =
+        std::fs::read_to_string(workspace_state_url).map_err(|e| {
+            anyhow!(format!(
+                "Failed to read workspace-state.json; error='{}'",
+                e
+            ))
+        })?;
+    let workspace_state: WorkspaceState = serde_json::from_str(&workspace_state_json_content)
+        .map_err(|e| {
+            anyhow!(format!(
+                "Failed to parse workspace-state.json; error='{}'",
+                e
+            ))
+        })?;
+
+    let packages =
+        workspace_state
+            .object
+            .dependencies
+            .iter()
+            .fold(BTreeMap::new(), |mut acc, dep| {
+                acc.insert(
+                    dep.package_ref.name.clone(),
+                    dep.package_ref.location.clone(),
+                );
+                acc
+            });
 
     Ok(packages)
 }
 
-fn get_packages_licenses(packages_directory: &PathBuf) -> Result<HashMap<OsString, String>> {
+fn get_packages_licenses(packages_directory: &PathBuf) -> Result<HashMap<String, String>> {
     assert!(packages_directory.is_dir());
 
     let packages_directory_contents = std::fs::read_dir(packages_directory)
-        .map_err(|e| anyhow!(format!("Failed to read packages directory contents; error='{}'", e)))?
+        .map_err(|e| {
+            anyhow!(format!(
+                "Failed to read packages directory contents; error='{}'",
+                e
+            ))
+        })?
         .filter_map(|p| p.ok())
         .filter(|e| e.path().is_dir());
-    let mut licenses: HashMap<OsString, String> = HashMap::new();
+    let mut licenses: HashMap<String, String> = HashMap::new();
     for content in packages_directory_contents {
+        let filename = match content.file_name().to_str() {
+            None => continue,
+            Some(filename) => filename.to_owned(),
+        };
         let package_licenses: Vec<_> = std::fs::read_dir(content.path())
-            .map_err(|e| anyhow!(format!("Failed to read packages directory contents; error='{}'", e)))?
+            .map_err(|e| {
+                anyhow!(format!(
+                    "Failed to read packages directory contents; error='{}'",
+                    e
+                ))
+            })?
             .filter_map(|d| d.ok())
             .map(|d| d.path())
             .filter(|p| {
@@ -94,7 +159,7 @@ fn get_packages_licenses(packages_directory: &PathBuf) -> Result<HashMap<OsStrin
         };
         let license = std::fs::read_to_string(license_path)
             .map_err(|e| anyhow!(format!("Failed to read license; error='{}'", e)))?;
-        licenses.insert(content.file_name(), license);
+        licenses.insert(filename, license);
     }
 
     Ok(licenses)
@@ -102,7 +167,10 @@ fn get_packages_licenses(packages_directory: &PathBuf) -> Result<HashMap<OsStrin
 
 fn find_derived_data_for_app(app_name: &String) -> Result<PathBuf> {
     let xcode_derived_data_base_display = get_xcode_derived_data_base()?;
-    let glob_pattern = format!("{}-*", xcode_derived_data_base_display.join(app_name).display());
+    let glob_pattern = format!(
+        "{}-*",
+        xcode_derived_data_base_display.join(app_name).display()
+    );
 
     glob(&glob_pattern)
         .map_err(|e| anyhow!(format!("Failed to search through derived data; error={}", e)))
