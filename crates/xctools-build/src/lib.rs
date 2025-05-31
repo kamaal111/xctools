@@ -33,11 +33,6 @@ impl std::fmt::Display for Configuration {
     }
 }
 
-pub struct BuildTarget {
-    project: Option<String>,
-    workspace: Option<String>,
-}
-
 /// Builds an Xcode project or workspace using the `xcodebuild` command-line tool.
 ///
 /// This function constructs and executes an `xcodebuild` command with the specified parameters
@@ -158,7 +153,7 @@ pub fn build(
     project: &Option<String>,
     workspace: &Option<String>,
 ) -> anyhow::Result<String> {
-    let target = BuildTarget::new(project.clone(), workspace.clone());
+    let target = BuildTarget::new(project.as_ref(), workspace.as_ref());
     let project_or_workspace = match target.project_or_workspace_string() {
         Ok(project_or_workspace) => project_or_workspace,
         Err(_) => anyhow::bail!("Failed to determine project or workspace"),
@@ -171,20 +166,28 @@ pub fn build(
         .arg("-c")
         .arg(command)
         .spawn()
-        .with_context(|| format!("Failed to build {}", project_or_workspace))?
+        .context(format!("Failed to build {}", project_or_workspace))?
         .wait_with_output()
-        .with_context(|| format!("Failed to build {}", project_or_workspace))
+        .context(format!("Failed to build {}", project_or_workspace))
     {
         Err(error) => return Err(error),
         Ok(output) => output,
     };
 
-    String::from_utf8(output.stdout).with_context(|| "Failed to decode output")
+    String::from_utf8(output.stdout).context("Failed to decode output")
+}
+
+struct BuildTarget {
+    project: Option<String>,
+    workspace: Option<String>,
 }
 
 impl BuildTarget {
-    fn new(project: Option<String>, workspace: Option<String>) -> Self {
-        Self { project, workspace }
+    fn new(project: Option<&String>, workspace: Option<&String>) -> Self {
+        Self {
+            project: project.cloned(),
+            workspace: workspace.cloned(),
+        }
     }
 
     fn project_or_workspace_string(&self) -> anyhow::Result<String> {
@@ -235,7 +238,7 @@ mod tests {
 
     #[test]
     fn test_build_target_with_project() {
-        let target = BuildTarget::new(Some("TestProject.xcodeproj".to_string()), None);
+        let target = BuildTarget::new(Some(&"TestProject.xcodeproj".to_string()), None);
 
         assert_eq!(
             target.project_or_workspace_string().unwrap(),
@@ -249,7 +252,7 @@ mod tests {
 
     #[test]
     fn test_build_target_with_workspace() {
-        let target = BuildTarget::new(None, Some("TestWorkspace.xcworkspace".to_string()));
+        let target = BuildTarget::new(None, Some(&"TestWorkspace.xcworkspace".to_string()));
 
         assert_eq!(
             target.project_or_workspace_string().unwrap(),
@@ -283,7 +286,7 @@ mod tests {
 
     #[test]
     fn test_build_command() {
-        let target = BuildTarget::new(Some("TestProject.xcodeproj".to_string()), None);
+        let target = BuildTarget::new(Some(&"TestProject.xcodeproj".to_string()), None);
         let command = build_command(
             &"TestScheme".to_string(),
             &"iOS Simulator,name=iPhone 15 Pro".to_string(),
