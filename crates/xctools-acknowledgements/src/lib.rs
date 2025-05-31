@@ -3,17 +3,14 @@ use glob::glob;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, HashMap},
+    ffi::OsStr,
     path::PathBuf,
     process::{Command, Stdio},
 };
 
 pub fn acknowledgements(app_name: &String, output: &String) -> Result<String> {
-    let packages_directory = find_derived_data_for_app(app_name)?.join("SourcePackages");
-    let packages_licenses = get_packages_licenses(&packages_directory.join("checkouts"))?;
-    let packages_urls = get_packages_urls(&packages_directory.join("workspace-state.json"))?;
-    let package_acknowledgements =
-        make_package_acknowledgements(&packages_urls, &packages_licenses);
-    println!("🐸🐸🐸 {:?}", package_acknowledgements);
+    let packages_acknowledgements = get_packages_acknowledgements(&app_name);
+    let contributors_list = get_contributors_list();
 
     Ok(String::from(""))
 }
@@ -64,7 +61,75 @@ impl PackageAcknowledgement {
     }
 }
 
-fn make_package_acknowledgements(
+fn get_contributors_list() -> Option<String> {
+    let output = match run_zsh_command("git --no-pager log \"--pretty=format:%an <%ae>\"") {
+        None => return None,
+        Some(output) => output,
+    };
+    let contributor_names_mapped_by_emails = output
+        .lines()
+        .filter_map(|line| {
+            let email = extract_email_out_of_contributors_line(line)?;
+            let name = extract_name_out_of_contributors_line(line)?;
+            Some((email, name))
+        })
+        .fold(
+            HashMap::<String, Vec<String>>::new(),
+            |mut acc, (email, name)| {
+                acc.entry(email).or_insert_with(Vec::new).push(name);
+                acc
+            },
+        );
+    println!("🐸🐸🐸 {:?}", contributor_names_mapped_by_emails);
+
+    Some(String::from(""))
+}
+
+/// Extract name from format "Name <email@domain.com>"
+fn extract_name_out_of_contributors_line(line: &str) -> Option<String> {
+    let end = match line.find('<') {
+        None => return None,
+        Some(end) => end,
+    };
+
+    let name = line[..end].trim().to_string();
+    if name.is_empty() {
+        return None;
+    }
+
+    Some(name)
+}
+
+/// Extract email from format "Name <email@domain.com>"
+fn extract_email_out_of_contributors_line(line: &str) -> Option<String> {
+    let start = match line.find('<') {
+        None => return None,
+        Some(start) => start,
+    };
+    let end = match line.find('>') {
+        None => return None,
+        Some(end) => end,
+    };
+    if end <= start {
+        return None;
+    }
+
+    let email = line[start + 1..end].to_string();
+
+    Some(email)
+}
+
+fn get_packages_acknowledgements(app_name: &String) -> Result<Vec<PackageAcknowledgement>> {
+    let packages_directory = find_derived_data_for_app(app_name)?.join("SourcePackages");
+    let packages_licenses = get_packages_licenses(&packages_directory.join("checkouts"))?;
+    let packages_urls = get_packages_urls(&packages_directory.join("workspace-state.json"))?;
+    let packages_acknowledgements =
+        make_packages_acknowledgements(&packages_urls, &packages_licenses);
+
+    Ok(packages_acknowledgements)
+}
+
+fn make_packages_acknowledgements(
     packages_urls: &BTreeMap<String, String>,
     package_licenses: &HashMap<String, String>,
 ) -> Vec<PackageAcknowledgement> {
@@ -213,10 +278,14 @@ fn get_default_derived_data_base() -> Result<PathBuf> {
     Ok(result)
 }
 
-fn get_user_configured_derived_data_base() -> Option<PathBuf> {
+fn run_zsh_command<S>(command: S) -> Option<String>
+where
+    S: AsRef<OsStr>,
+{
     let child = match Command::new("zsh")
         .arg("-c")
-        .arg("defaults read com.apple.dt.Xcode IDECustomDerivedDataLocation")
+        .arg(command)
+        .stdout(Stdio::piped())
         .stderr(Stdio::null())
         .spawn()
     {
@@ -227,7 +296,17 @@ fn get_user_configured_derived_data_base() -> Option<PathBuf> {
         Err(_error) => return None,
         Ok(output) => output,
     };
-    let stdout_string = String::from_utf8(output.stdout).unwrap_or(String::from(""));
+    let stdout_string = match String::from_utf8(output.stdout) {
+        Err(_error) => return None,
+        Ok(stdout_string) => stdout_string,
+    };
+
+    Some(stdout_string)
+}
+
+fn get_user_configured_derived_data_base() -> Option<PathBuf> {
+    let stdout_string =
+        run_zsh_command("defaults read com.apple.dt.Xcode IDECustomDerivedDataLocation")?;
     let trimmed_stdout_string = stdout_string.trim();
     if trimmed_stdout_string.is_empty() {
         return None;
