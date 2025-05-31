@@ -3,7 +3,10 @@ use glob::glob;
 use semver::Version;
 use std::path::{Path, PathBuf};
 
-pub fn bump_version(build_number: &Option<i32>, version_number: &Option<Version>) -> Result<String> {
+pub fn bump_version(
+    build_number: &Option<i32>,
+    version_number: &Option<Version>,
+) -> Result<String> {
     bump_version_in_path(build_number, version_number, None)
 }
 
@@ -49,7 +52,11 @@ fn bump_version_in_path(
     ))
 }
 
-fn replace_pbxproj_line(line: &str, build_number: &Option<i32>, version_number: &Option<Version>) -> String {
+fn replace_pbxproj_line(
+    line: &str,
+    build_number: &Option<i32>,
+    version_number: &Option<Version>,
+) -> String {
     let formatted_line = replace_key_value_line(
         line,
         "CURRENT_PROJECT_VERSION",
@@ -95,8 +102,13 @@ fn find_first_pbxproj_filepath(search_path: Option<&Path>) -> Option<PathBuf> {
 }
 
 fn read_pbxproj_file(path: &Path) -> Result<String> {
-    std::fs::read_to_string(path)
-        .map_err(|e| anyhow!("Failed to read project.pbxproj file at {}: {}", path.display(), e))
+    std::fs::read_to_string(path).map_err(|e| {
+        anyhow!(
+            "Failed to read project.pbxproj file at {}: {}",
+            path.display(),
+            e
+        )
+    })
 }
 
 #[cfg(test)]
@@ -121,7 +133,12 @@ mod tests {
             "CURRENT_PROJECT_VERSION = 1;\n    MARKETING_VERSION = 1.0.0;\nOtherKey = 42;",
         )
         .unwrap();
-        let output = bump_version_in_path(&Some(5), &Some(Version::parse("2.3.4").unwrap()), Some(tmp.path())).unwrap();
+        let output = bump_version_in_path(
+            &Some(5),
+            &Some(Version::parse("2.3.4").unwrap()),
+            Some(tmp.path()),
+        )
+        .unwrap();
 
         assert!(output.contains("Build number set to: 5"));
         assert!(output.contains("Version number set to: 2.3.4"));
@@ -136,7 +153,11 @@ mod tests {
     fn test_bump_build_only() {
         let tmp = tempdir().unwrap();
         let filepath = tmp.path().join("project.pbxproj");
-        std::fs::write(&filepath, "CURRENT_PROJECT_VERSION = 9;\nMARKETING_VERSION = 3.0.0;").unwrap();
+        std::fs::write(
+            &filepath,
+            "CURRENT_PROJECT_VERSION = 9;\nMARKETING_VERSION = 3.0.0;",
+        )
+        .unwrap();
         let _ = bump_version_in_path(&Some(10), &None, Some(tmp.path())).unwrap();
         let content = std::fs::read_to_string(&filepath).unwrap();
 
@@ -153,7 +174,12 @@ mod tests {
             "CURRENT_PROJECT_VERSION = 7;\n    MARKETING_VERSION = 0.1.0;",
         )
         .unwrap();
-        let _ = bump_version_in_path(&None, &Some(Version::parse("0.2.0").unwrap()), Some(tmp.path())).unwrap();
+        let _ = bump_version_in_path(
+            &None,
+            &Some(Version::parse("0.2.0").unwrap()),
+            Some(tmp.path()),
+        )
+        .unwrap();
         let content = std::fs::read_to_string(&filepath).unwrap();
 
         assert!(content.contains("CURRENT_PROJECT_VERSION = 7;"));
@@ -164,7 +190,8 @@ mod tests {
     fn test_replace_key_value_line() {
         // Test the helper function directly
         let line = "    CURRENT_PROJECT_VERSION = 1;";
-        let result = replace_key_value_line(line, "CURRENT_PROJECT_VERSION", &Some("42".to_string()));
+        let result =
+            replace_key_value_line(line, "CURRENT_PROJECT_VERSION", &Some("42".to_string()));
 
         assert_eq!(result, "    CURRENT_PROJECT_VERSION = 42;");
 
@@ -188,13 +215,15 @@ mod tests {
         assert_eq!(result, "    CURRENT_PROJECT_VERSION = 42;");
 
         let line2 = "        MARKETING_VERSION = 1.0.0;";
-        let result2 = replace_pbxproj_line(line2, &Some(42), &Some(Version::parse("2.0.0").unwrap()));
+        let result2 =
+            replace_pbxproj_line(line2, &Some(42), &Some(Version::parse("2.0.0").unwrap()));
 
         assert_eq!(result2, "        MARKETING_VERSION = 2.0.0;");
 
         // Test line that doesn't match either key
         let line3 = "    OTHER_KEY = value;";
-        let result3 = replace_pbxproj_line(line3, &Some(42), &Some(Version::parse("2.0.0").unwrap()));
+        let result3 =
+            replace_pbxproj_line(line3, &Some(42), &Some(Version::parse("2.0.0").unwrap()));
 
         assert_eq!(result3, line3);
     }

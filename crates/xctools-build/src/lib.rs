@@ -124,7 +124,10 @@ mod tests {
     fn test_build_target_with_project() {
         let target = BuildTarget::new(Some("TestProject.xcodeproj".to_string()), None);
 
-        assert_eq!(target.project_or_workspace_string().unwrap(), "TestProject.xcodeproj");
+        assert_eq!(
+            target.project_or_workspace_string().unwrap(),
+            "TestProject.xcodeproj"
+        );
         assert_eq!(
             target.project_or_workspace_argument().unwrap(),
             "-project TestProject.xcodeproj"
