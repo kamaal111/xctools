@@ -10,11 +10,17 @@ use std::{
 };
 
 pub fn acknowledgements(app_name: &String, output: &String) -> Result<String> {
-    let packages_acknowledgements = get_packages_acknowledgements(&app_name);
-    let contributors_list = get_contributors_list();
-    println!("🐸🐸🐸 {:?}", contributors_list);
+    let packages = get_packages_acknowledgements(&app_name)?;
+    let contributors = get_contributors_list();
+    let acknowledgements = Acknowledgements::new(&packages, &contributors);
+    let final_output_path = make_final_output_path(output);
+    write_acknowledgements(&acknowledgements, &final_output_path)?;
+    let stdout = format!(
+        "✅ Acknowledgements written to: {}",
+        final_output_path.display()
+    );
 
-    Ok(String::from(""))
+    Ok(stdout)
 }
 
 #[derive(Debug, Serialize)]
@@ -116,6 +122,31 @@ impl PackageAcknowledgement {
             url: url.clone(),
         }
     }
+}
+
+fn make_final_output_path(output: &String) -> PathBuf {
+    let output_path = PathBuf::from(output);
+    let final_output_path = if output_path.is_dir() {
+        output_path.join("acknowledgements.json")
+    } else {
+        output_path
+    };
+
+    final_output_path
+}
+
+fn write_acknowledgements(
+    acknowledgements: &Acknowledgements,
+    output_path: &PathBuf,
+) -> Result<()> {
+    let json_content = serde_json::to_string_pretty(&acknowledgements)
+        .context("Failed to serialize acknowledgements to JSON")?;
+    std::fs::write(&output_path, &json_content).context(format!(
+        "Failed to write acknowledgements to file: {}",
+        output_path.display()
+    ))?;
+
+    Ok(())
 }
 
 fn get_contributors_list() -> Vec<Contributor> {
@@ -375,9 +406,17 @@ fn find_derived_data_for_app(app_name: &String) -> Result<PathBuf> {
     );
 
     glob(&glob_pattern)
-        .map_err(|e| anyhow!(format!("Failed to search through derived data; error={}", e)))
+        .map_err(|e| {
+            anyhow!(format!(
+                "Failed to search through derived data; error={}",
+                e
+            ))
+        })
         .and_then(|matches| {
-            let mut paths: Vec<_> = matches.filter_map(|p| p.ok()).filter(|p| p.is_dir()).collect();
+            let mut paths: Vec<_> = matches
+                .filter_map(|p| p.ok())
+                .filter(|p| p.is_dir())
+                .collect();
             // Sort by last modified, the first in the list being latest updated
             paths.sort_by(|a, b| {
                 let a_modified = std::fs::metadata(a)
@@ -392,7 +431,9 @@ fn find_derived_data_for_app(app_name: &String) -> Result<PathBuf> {
 
             paths
                 .first()
-                .with_context(|| "Could not find any DerivedData for project, make sure to build at least once")
+                .context(
+                    "Could not find any DerivedData for project, make sure to build at least once",
+                )
                 .cloned()
         })
 }
@@ -409,7 +450,7 @@ fn get_xcode_derived_data_base() -> Result<PathBuf> {
 
 fn get_default_derived_data_base() -> Result<PathBuf> {
     let result = std::env::home_dir()
-        .with_context(|| "Failed to load home directory")?
+        .context("Failed to load home directory")?
         .join("Library/Developer/Xcode/DerivedData");
 
     Ok(result)
