@@ -2,33 +2,73 @@ use anyhow::{Context, Result, anyhow};
 use glob::glob;
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::{BTreeMap, HashMap, HashSet},
     ffi::OsStr,
     path::PathBuf,
     process::{Command, Stdio},
+    str::SplitWhitespace,
 };
 
 pub fn acknowledgements(app_name: &String, output: &String) -> Result<String> {
     let packages_acknowledgements = get_packages_acknowledgements(&app_name);
     let contributors_list = get_contributors_list();
+    println!("🐸🐸🐸 {:?}", contributors_list);
 
     Ok(String::from(""))
 }
 
 #[derive(Debug, Serialize)]
+struct Acknowledgements {
+    packages: Vec<PackageAcknowledgement>,
+    contributors: Vec<Contributor>,
+}
+
+impl Acknowledgements {
+    fn new(
+        packages: &Vec<PackageAcknowledgement>,
+        contributors: &Vec<Contributor>,
+    ) -> Acknowledgements {
+        Acknowledgements {
+            packages: packages.clone(),
+            contributors: contributors.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Clone)]
 struct Contributor {
     name: String,
-    email: String,
+    email: Option<String>,
     contributions: i64,
 }
 
 impl Contributor {
-    fn new(name: String, email: String, contributions: i64) -> Contributor {
+    fn new(name: &String, email: Option<&String>, contributions: &i64) -> Contributor {
         Contributor {
-            name,
-            email,
-            contributions,
+            name: name.clone(),
+            email: email.cloned(),
+            contributions: *contributions,
         }
+    }
+
+    fn without_email(&self) -> Contributor {
+        Contributor::new(&self.name, None, &self.contributions)
+    }
+
+    fn first_name(&self) -> Option<&str> {
+        self.name_parts().nth(0)
+    }
+
+    fn has_only_a_single_name(&self) -> bool {
+        self.collected_name_parts().len() == 1
+    }
+
+    fn name_parts(&self) -> SplitWhitespace<'_> {
+        self.name.split_whitespace()
+    }
+
+    fn collected_name_parts(&self) -> Vec<&str> {
+        self.name_parts().collect()
     }
 }
 
@@ -54,7 +94,7 @@ struct PackageRef {
     location: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 struct PackageAcknowledgement {
     name: String,
     license: Option<String>,
@@ -64,37 +104,32 @@ struct PackageAcknowledgement {
 
 impl PackageAcknowledgement {
     fn new(
-        name: String,
-        license: Option<String>,
-        author: String,
-        url: String,
+        name: &String,
+        license: Option<&String>,
+        author: &String,
+        url: &String,
     ) -> PackageAcknowledgement {
         PackageAcknowledgement {
-            name,
-            license,
-            author,
-            url,
+            name: name.clone(),
+            license: license.cloned(),
+            author: author.clone(),
+            url: url.clone(),
         }
     }
 }
 
-fn get_contributors_list() -> Option<String> {
-    let output = match run_zsh_command("git --no-pager log \"--pretty=format:%an <%ae>\"") {
-        None => return None,
+fn get_contributors_list() -> Vec<Contributor> {
+    let output = match run_zsh_command(&"git --no-pager log \"--pretty=format:%an <%ae>\"") {
+        None => return Vec::new(),
         Some(output) => output,
     };
-    let contributors = output
+    let contributor_names_mapped_by_emails = output
         .lines()
         .filter_map(|line| {
             let email = extract_email_out_of_contributors_line(line)?;
             let name = extract_name_out_of_contributors_line(line)?;
-            // TODO: Make this extendable somehow!
-            let contributor_name: String = if name == "kamaal111" || name == "Kamaal" {
-                String::from("Kamaal Farah")
-            } else {
-                name
-            };
-            Some((email, contributor_name))
+
+            Some((email, patch_contributor_name(&name)))
         })
         .fold(
             HashMap::<String, Vec<String>>::new(),
@@ -102,9 +137,10 @@ fn get_contributors_list() -> Option<String> {
                 acc.entry(email).or_insert_with(Vec::new).push(name);
                 acc
             },
-        )
-        .iter()
-        .fold(Vec::<Contributor>::new(), |mut acc, (email, names)| {
+        );
+    let aggregated_contributors = contributor_names_mapped_by_emails.iter().fold(
+        Vec::<Contributor>::new(),
+        |mut acc, (email, names)| {
             let longest_name = names.iter().fold(String::from(""), |longest_name, name| {
                 if longest_name.len() >= name.len() {
                     return longest_name;
@@ -112,14 +148,80 @@ fn get_contributors_list() -> Option<String> {
 
                 name.clone()
             });
-            let contributor = Contributor::new(longest_name, email.clone(), names.len() as i64);
+            let contributor = Contributor::new(&longest_name, Some(&email), &(names.len() as i64));
             acc.push(contributor);
 
             acc
-        });
-    println!("🐸🐸🐸 {:?}", contributors);
+        },
+    );
+    let mut contributors = merge_contributors_with_similar_names(&aggregated_contributors);
+    contributors.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
 
-    Some(String::from(""))
+    contributors.iter().map(|c| c.without_email()).collect()
+}
+
+fn merge_contributors_with_similar_names(contributors: &Vec<Contributor>) -> Vec<Contributor> {
+    contributors.iter().fold(
+        Vec::<Contributor>::new(),
+        |mut merged_contributors, contributor| {
+            let contributor_first_name = match contributor.first_name() {
+                None => return merged_contributors,
+                Some(contributor_first_name) => contributor_first_name,
+            };
+            if contributor_first_name.is_empty() {
+                return merged_contributors;
+            }
+
+            let first_names: HashSet<_> = merged_contributors
+                .iter()
+                .filter_map(|c| c.first_name())
+                .collect();
+            if !first_names.contains(contributor_first_name) {
+                merged_contributors.push(contributor.clone());
+
+                return merged_contributors;
+            }
+
+            let merged_contributor_to_update =
+                merged_contributors.iter().enumerate().find(|(_i, c)| {
+                    let first_name_is_the_same =
+                        contributor_first_name == c.first_name().unwrap_or("");
+                    let name_is_the_same = contributor.name == c.name;
+                    let one_of_authors_has_just_a_single_name =
+                        (contributor.has_only_a_single_name() || c.has_only_a_single_name())
+                            && contributor.collected_name_parts().len()
+                                != c.collected_name_parts().len();
+
+                    first_name_is_the_same
+                        && (name_is_the_same || one_of_authors_has_just_a_single_name)
+                });
+            if let Some(merged_contributor_to_update) = merged_contributor_to_update {
+                let (i, c) = merged_contributor_to_update;
+                let longest_author_name = if contributor.name.len() > c.name.len() {
+                    &contributor.name
+                } else {
+                    &c.name
+                };
+                let merged_contributor = Contributor::new(
+                    longest_author_name,
+                    contributor.email.as_ref(),
+                    &(contributor.contributions + c.contributions),
+                );
+                merged_contributors[i] = merged_contributor;
+            }
+
+            merged_contributors
+        },
+    )
+}
+
+fn patch_contributor_name(name: &String) -> String {
+    // TODO: Make this extendable somehow!
+    if name == "kamaal111" || name == "Kamaal" {
+        String::from("Kamaal Farah")
+    } else {
+        name.clone()
+    }
 }
 
 /// Extract name from format "Name <email@domain.com>"
@@ -173,12 +275,10 @@ fn make_packages_acknowledgements(
     packages_urls
         .iter()
         .fold(Vec::new(), |mut acc, (name, url)| {
-            let name = name.clone();
-            let url = url.clone();
-            let license = package_licenses.get(&name).cloned();
+            let license = package_licenses.get(name);
             let url_parts: Vec<_> = url.split("/").collect();
             let author = url_parts[url_parts.len() - 2].to_string();
-            let entry = PackageAcknowledgement::new(name, license, author, url);
+            let entry = PackageAcknowledgement::new(name, license, &author, url);
             acc.push(entry);
 
             acc
@@ -315,7 +415,7 @@ fn get_default_derived_data_base() -> Result<PathBuf> {
     Ok(result)
 }
 
-fn run_zsh_command<S>(command: S) -> Option<String>
+fn run_zsh_command<S>(command: &S) -> Option<String>
 where
     S: AsRef<OsStr>,
 {
@@ -343,7 +443,7 @@ where
 
 fn get_user_configured_derived_data_base() -> Option<PathBuf> {
     let stdout_string =
-        run_zsh_command("defaults read com.apple.dt.Xcode IDECustomDerivedDataLocation")?;
+        run_zsh_command(&"defaults read com.apple.dt.Xcode IDECustomDerivedDataLocation")?;
     let trimmed_stdout_string = stdout_string.trim();
     if trimmed_stdout_string.is_empty() {
         return None;
