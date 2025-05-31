@@ -15,6 +15,23 @@ pub fn acknowledgements(app_name: &String, output: &String) -> Result<String> {
     Ok(String::from(""))
 }
 
+#[derive(Debug, Serialize)]
+struct Contributor {
+    name: String,
+    email: String,
+    contributions: i64,
+}
+
+impl Contributor {
+    fn new(name: String, email: String, contributions: i64) -> Contributor {
+        Contributor {
+            name,
+            email,
+            contributions,
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct WorkspaceState {
     object: WorkspaceObject,
@@ -66,12 +83,18 @@ fn get_contributors_list() -> Option<String> {
         None => return None,
         Some(output) => output,
     };
-    let contributor_names_mapped_by_emails = output
+    let contributors = output
         .lines()
         .filter_map(|line| {
             let email = extract_email_out_of_contributors_line(line)?;
             let name = extract_name_out_of_contributors_line(line)?;
-            Some((email, name))
+            // TODO: Make this extendable somehow!
+            let contributor_name: String = if name == "kamaal111" || name == "Kamaal" {
+                String::from("Kamaal Farah")
+            } else {
+                name
+            };
+            Some((email, contributor_name))
         })
         .fold(
             HashMap::<String, Vec<String>>::new(),
@@ -79,8 +102,22 @@ fn get_contributors_list() -> Option<String> {
                 acc.entry(email).or_insert_with(Vec::new).push(name);
                 acc
             },
-        );
-    println!("🐸🐸🐸 {:?}", contributor_names_mapped_by_emails);
+        )
+        .iter()
+        .fold(Vec::<Contributor>::new(), |mut acc, (email, names)| {
+            let longest_name = names.iter().fold(String::from(""), |longest_name, name| {
+                if longest_name.len() >= name.len() {
+                    return longest_name;
+                }
+
+                name.clone()
+            });
+            let contributor = Contributor::new(longest_name, email.clone(), names.len() as i64);
+            acc.push(contributor);
+
+            acc
+        });
+    println!("🐸🐸🐸 {:?}", contributors);
 
     Some(String::from(""))
 }
