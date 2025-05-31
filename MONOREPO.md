@@ -8,6 +8,10 @@ This project has been restructured as a mini monorepo with separate libraries fo
 xctools/
 ├── Cargo.toml                    # Workspace root
 ├── crates/
+│   ├── xctools-acknowledgements/ # Acknowledgements generation library
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       └── lib.rs
 │   ├── xctools-build/           # Build command library
 │   │   ├── Cargo.toml
 │   │   └── src/
@@ -25,6 +29,15 @@ xctools/
 ```
 
 ## Libraries
+
+### `xctools-acknowledgements`
+
+Contains the acknowledgements generation functionality:
+- `acknowledgements()` function for generating acknowledgements files
+- Scans Swift Package Manager workspace for dependencies
+- Extracts package information (name, license, author, URL)
+- Gathers git contributor information from commit history
+- Outputs structured JSON acknowledgements file
 
 ### `xctools-build`
 
@@ -55,6 +68,7 @@ cargo build
 
 # Build specific crate
 cargo build -p xctools-cli
+cargo build -p xctools-acknowledgements
 cargo build -p xctools-build
 cargo build -p xctools-bump-version
 ```
@@ -67,6 +81,7 @@ cargo test
 
 # Run tests for specific crate
 cargo test -p xctools-cli
+cargo test -p xctools-acknowledgements
 cargo test -p xctools-build
 cargo test -p xctools-bump-version
 ```
@@ -89,4 +104,7 @@ xctools build --schema MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --
 
 # Bump version
 xctools bump-version --build-number 42 --version-number 2.1.0
+
+# Generate acknowledgements
+xctools acknowledgements --app-name MyApp --output ./acknowledgements.json
 ```
