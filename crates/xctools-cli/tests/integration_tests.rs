@@ -28,9 +28,7 @@ fn test_build_command_help() {
 fn test_build_command_missing_required_args() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.arg("build");
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("required"));
+    cmd.assert().failure().stderr(predicate::str::contains("required"));
 }
 
 #[test]
@@ -43,9 +41,7 @@ fn test_build_command_missing_project_or_workspace() {
         "--destination",
         "iOS Simulator,name=iPhone 15 Pro",
     ]);
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("required"));
+    cmd.assert().failure().stderr(predicate::str::contains("required"));
 }
 
 #[test]
@@ -127,9 +123,7 @@ fn test_bump_version_command_help() {
 fn test_bump_version_command_missing_required_args() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.arg("bump-version");
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("required"));
+    cmd.assert().failure().stderr(predicate::str::contains("required"));
 }
 
 #[test]
@@ -158,9 +152,7 @@ fn test_bump_version_command_build_number_only() {
         .args(&["bump-version", "--build-number", "42"]);
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains(
-            "Successfully updated project.pbxproj",
-        ))
+        .stdout(predicate::str::contains("Successfully updated project.pbxproj"))
         .stdout(predicate::str::contains("Build number set to: 42"))
         .stdout(predicate::str::contains("Version number set to: UNSET"));
 
@@ -185,9 +177,7 @@ fn test_bump_version_command_version_number_only() {
         .args(&["bump-version", "--version-number", "2.1.3"]);
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains(
-            "Successfully updated project.pbxproj",
-        ))
+        .stdout(predicate::str::contains("Successfully updated project.pbxproj"))
         .stdout(predicate::str::contains("Build number set to: UNSET"))
         .stdout(predicate::str::contains("Version number set to: 2.1.3"));
 
@@ -208,18 +198,11 @@ fn test_bump_version_command_both_values() {
     .unwrap();
 
     let mut cmd = Command::cargo_bin("xctools").unwrap();
-    cmd.current_dir(tmp.path()).args(&[
-        "bump-version",
-        "--build-number",
-        "100",
-        "--version-number",
-        "3.2.1",
-    ]);
+    cmd.current_dir(tmp.path())
+        .args(&["bump-version", "--build-number", "100", "--version-number", "3.2.1"]);
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains(
-            "Successfully updated project.pbxproj",
-        ))
+        .stdout(predicate::str::contains("Successfully updated project.pbxproj"))
         .stdout(predicate::str::contains("Build number set to: 100"))
         .stdout(predicate::str::contains("Version number set to: 3.2.1"));
 
@@ -263,9 +246,7 @@ fn test_bump_version_command_with_nested_pbxproj() {
         .args(&["bump-version", "--build-number", "999"]);
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains(
-            "Successfully updated project.pbxproj",
-        ))
+        .stdout(predicate::str::contains("Successfully updated project.pbxproj"))
         .stdout(predicate::str::contains("Build number set to: 999"));
 
     let content = std::fs::read_to_string(&pbxproj_path).unwrap();
