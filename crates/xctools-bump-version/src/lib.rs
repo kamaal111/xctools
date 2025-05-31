@@ -3,6 +3,71 @@ use glob::glob;
 use semver::Version;
 use std::path::{Path, PathBuf};
 
+/// Updates version numbers and build numbers in Xcode project files.
+///
+/// This function searches for the first `project.pbxproj` file in the current directory or its
+/// subdirectories, then updates the `CURRENT_PROJECT_VERSION` (build number) and/or
+/// `MARKETING_VERSION` (version number) fields within that file. It preserves the original
+/// file formatting and indentation.
+///
+/// # Arguments
+///
+/// * `build_number` - Optional build number to set. If provided, updates `CURRENT_PROJECT_VERSION`
+///   in the project.pbxproj file (e.g., 42, 100, 1337)
+/// * `version_number` - Optional semantic version to set. If provided, updates `MARKETING_VERSION`
+///   in the project.pbxproj file (e.g., "1.0.0", "2.1.3", "0.5.0-beta")
+///
+/// # Returns
+///
+/// Returns `Ok(String)` with a success message indicating what was updated and where,
+/// or `Err` if the operation fails (e.g., no project.pbxproj found, file read/write errors).
+///
+/// # Examples
+///
+/// ## Using as a library:
+/// ```rust
+/// use xctools_bump_version::bump_version;
+/// use semver::Version;
+///
+/// // Update build number only
+/// let result = bump_version(&Some(42), &None);
+/// match result {
+///     Ok(message) => println!("{}", message),
+///     Err(e) => eprintln!("Error: {}", e),
+/// }
+///
+/// // Update version number only
+/// let version = Version::parse("2.1.0").unwrap();
+/// let result = bump_version(&None, &Some(version));
+///
+/// // Update both build and version numbers
+/// let version = Version::parse("1.5.0").unwrap();
+/// let result = bump_version(&Some(100), &Some(version));
+/// ```
+///
+/// ## Using the xctools CLI:
+/// ```bash
+/// # Update build number only
+/// xctools bump-version --build-number 42
+///
+/// # Update version number only
+/// xctools bump-version --version-number 2.1.0
+///
+/// # Update both build and version numbers
+/// xctools bump-version --build-number 42 --version-number 2.1.0
+/// ```
+///
+/// # File Changes
+///
+/// The function modifies lines in project.pbxproj that match these patterns:
+/// - `CURRENT_PROJECT_VERSION = <old_value>;` → `CURRENT_PROJECT_VERSION = <new_build_number>;`
+/// - `MARKETING_VERSION = <old_value>;` → `MARKETING_VERSION = <new_version>;`
+///
+/// # Requirements
+///
+/// - At least one `project.pbxproj` file must exist in the current directory or subdirectories
+/// - Write permissions for the project.pbxproj file
+/// - At least one of `build_number` or `version_number` must be provided
 pub fn bump_version(
     build_number: &Option<i32>,
     version_number: &Option<Version>,

@@ -32,10 +32,10 @@ xctools/
 ├── Cargo.toml                    # Workspace root
 ├── crates/
 │   ├── xctools-acknowledgements/ # Acknowledgements generation library
-│   ├── xctools-build/           # Build command library
-│   ├── xctools-bump-version/    # Version bumping library  
-│   └── xctools-cli/             # Main CLI application
-└── MONOREPO.md                  # Detailed monorepo documentation
+│   ├── xctools-build/            # Build command library
+│   ├── xctools-bump-version/     # Version bumping library
+│   └── xctools-cli/              # Main CLI application
+└── MONOREPO.md                   # Detailed monorepo documentation
 ```
 
 - **`xctools-acknowledgements`**: Library for generating acknowledgements files

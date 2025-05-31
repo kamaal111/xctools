@@ -9,6 +9,62 @@ use std::{
     str::SplitWhitespace,
 };
 
+/// Generates acknowledgements file for Swift Package Manager dependencies and git contributors.
+///
+/// This function scans the Xcode project's DerivedData to find Swift Package Manager dependencies,
+/// extracts package information (name, license, author, URL), analyzes git commit history to
+/// identify project contributors, and outputs a structured JSON acknowledgements file.
+///
+/// # Arguments
+///
+/// * `app_name` - The name of the Xcode app/project to generate acknowledgements for. This is used
+///   to locate the correct DerivedData folder containing package information.
+/// * `output` - The output path for the acknowledgements file. Can be either:
+///   - A specific file path (e.g., "./Credits.json")
+///   - A directory path (will create "acknowledgements.json" in that directory)
+///
+/// # Returns
+///
+/// Returns `Ok(String)` with a success message indicating where the acknowledgements file was written,
+/// or `Err` if the operation fails (e.g., DerivedData not found, file write permissions, etc.).
+///
+/// # Examples
+///
+/// ## Using as a library:
+/// ```rust
+/// use xctools_acknowledgements::acknowledgements;
+///
+/// // Generate acknowledgements for "MyApp" project
+/// let result = acknowledgements(&"MyApp".to_string(), &"./acknowledgements.json".to_string());
+/// match result {
+///     Ok(message) => println!("{}", message),
+///     Err(e) => eprintln!("Error: {}", e),
+/// }
+/// ```
+///
+/// ## Using the xctools CLI:
+/// ```bash
+/// # Generate acknowledgements to a specific file
+/// xctools acknowledgements --app-name MyApp --output ./acknowledgements.json
+///
+/// # Generate acknowledgements to a directory (creates acknowledgements.json)
+/// xctools acknowledgements --app-name MyApp --output ./output-directory/
+///
+/// # Generate acknowledgements for a specific app with custom name
+/// xctools acknowledgements --app-name "My iOS App" --output ./Credits.json
+/// ```
+///
+/// # Output Format
+///
+/// The generated JSON file contains:
+/// - `packages`: Array of Swift Package Manager dependencies with name, license, author, and URL
+/// - `contributors`: Array of git contributors with name and contribution count (emails removed)
+///
+/// # Requirements
+///
+/// - The app must have been built at least once to generate DerivedData
+/// - Git repository must exist for contributor analysis
+/// - Write permissions for the output location
 pub fn acknowledgements(app_name: &String, output: &String) -> Result<String> {
     let packages = get_packages_acknowledgements(&app_name)?;
     let contributors = get_contributors_list();

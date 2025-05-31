@@ -38,6 +38,84 @@ pub struct BuildTarget {
     workspace: Option<String>,
 }
 
+/// Builds an Xcode project or workspace using the `xcodebuild` command-line tool.
+///
+/// This function constructs and executes an `xcodebuild` command with the specified parameters
+/// to build an iOS, macOS, watchOS, or tvOS application. It supports building from either
+/// Xcode project files (.xcodeproj) or workspace files (.xcworkspace).
+///
+/// # Arguments
+///
+/// * `schema` - The Xcode scheme name to build (e.g., "MyApp", "MyAppTests")
+/// * `destination` - The build destination specifying the target device or simulator:
+///   - iOS Simulator: "iOS Simulator,name=iPhone 15 Pro"
+///   - Generic iOS: "generic/platform=iOS"
+///   - macOS: "platform=macOS"
+/// * `configuration` - The build configuration to use (Debug or Release)
+/// * `project` - Optional path to the Xcode project file (.xcodeproj). Either this or
+///   `workspace` must be provided, but not both.
+/// * `workspace` - Optional path to the Xcode workspace file (.xcworkspace). Either this or
+///   `project` must be provided, but not both.
+///
+/// # Returns
+///
+/// Returns `Ok(String)` containing the stdout from the xcodebuild command on success,
+/// or `Err` if the build fails or if neither project nor workspace is specified.
+///
+/// # Examples
+///
+/// ## Using as a library:
+/// ```rust
+/// use xctools_build::{build, Configuration};
+///
+/// // Build a project with Debug configuration
+/// let result = build(
+///     &"MyApp".to_string(),
+///     &"iOS Simulator,name=iPhone 15 Pro".to_string(),
+///     &Configuration::Debug,
+///     &Some("MyApp.xcodeproj".to_string()),
+///     &None,
+/// );
+/// match result {
+///     Ok(output) => println!("Build successful:\n{}", output),
+///     Err(e) => eprintln!("Build failed: {}", e),
+/// }
+///
+/// // Build a workspace with Release configuration
+/// let result = build(
+///     &"MyApp".to_string(),
+///     &"generic/platform=iOS".to_string(),
+///     &Configuration::Release,
+///     &None,
+///     &Some("MyApp.xcworkspace".to_string()),
+/// );
+/// ```
+///
+/// ## Using the xctools CLI:
+/// ```bash
+/// # Build with project file and Debug configuration (default)
+/// xctools build --schema MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj
+///
+/// # Build with workspace file and Release configuration
+/// xctools build --schema MyApp --destination "generic/platform=iOS" --workspace MyApp.xcworkspace --configuration release
+///
+/// # Build for macOS
+/// xctools build --schema MyApp --destination "platform=macOS" --project MyApp.xcodeproj
+/// ```
+///
+/// # Generated Command
+///
+/// The function generates an xcodebuild command in the format:
+/// ```bash
+/// xcodebuild -project MyApp.xcodeproj -scheme MyApp -destination 'iOS Simulator,name=iPhone 15 Pro' -configuration Debug build
+/// ```
+///
+/// # Requirements
+///
+/// - Xcode must be installed and `xcodebuild` must be available in PATH
+/// - The specified project/workspace file must exist
+/// - The specified scheme must exist in the project/workspace
+/// - The destination must be valid for the target platform
 pub fn build(
     schema: &String,
     destination: &String,
