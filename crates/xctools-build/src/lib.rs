@@ -64,11 +64,40 @@ pub struct BuildTarget {
 ///
 /// # Examples
 ///
-/// ## Using as a library:
+/// ## Testing parameter validation - neither project nor workspace:
 /// ```rust
 /// use xctools_build::{build, Configuration};
 ///
-/// // Build a project with Debug configuration
+/// // This should fail because neither project nor workspace is specified
+/// let result = build(
+///     &"MyApp".to_string(),
+///     &"iOS Simulator,name=iPhone 15 Pro".to_string(),
+///     &Configuration::Debug,
+///     &None,
+///     &None,
+/// );
+/// assert!(result.is_err());
+/// let error_msg = result.unwrap_err().to_string();
+/// assert!(error_msg.contains("Failed to determine project or workspace"));
+/// ```
+///
+/// ## Testing Configuration enum usage:
+/// ```rust
+/// use xctools_build::{Configuration};
+///
+/// // Test Configuration enum values
+/// assert_eq!(Configuration::Debug.command_string(), "Debug");
+/// assert_eq!(Configuration::Release.command_string(), "Release");
+/// assert_eq!(Configuration::Debug.to_string(), "debug");
+/// assert_eq!(Configuration::Release.to_string(), "release");
+/// ```
+///
+/// ## Testing with project parameter (will attempt to build):
+/// ```rust,no_run
+/// use xctools_build::{build, Configuration};
+///
+/// // This example shows the function signature but doesn't run
+/// // because it would try to execute xcodebuild with a non-existent project
 /// let result = build(
 ///     &"MyApp".to_string(),
 ///     &"iOS Simulator,name=iPhone 15 Pro".to_string(),
@@ -76,12 +105,16 @@ pub struct BuildTarget {
 ///     &Some("MyApp.xcodeproj".to_string()),
 ///     &None,
 /// );
-/// match result {
-///     Ok(output) => println!("Build successful:\n{}", output),
-///     Err(e) => eprintln!("Build failed: {}", e),
-/// }
+/// // In a real scenario with a valid project, this would either succeed or
+/// // fail based on the actual build outcome
+/// ```
 ///
-/// // Build a workspace with Release configuration
+/// ## Testing with workspace parameter (will attempt to build):
+/// ```rust,no_run
+/// use xctools_build::{build, Configuration};
+///
+/// // This example shows the function signature but doesn't run
+/// // because it would try to execute xcodebuild with a non-existent workspace
 /// let result = build(
 ///     &"MyApp".to_string(),
 ///     &"generic/platform=iOS".to_string(),
@@ -89,6 +122,8 @@ pub struct BuildTarget {
 ///     &None,
 ///     &Some("MyApp.xcworkspace".to_string()),
 /// );
+/// // In a real scenario with a valid workspace, this would either succeed or
+/// // fail based on the actual build outcome
 /// ```
 ///
 /// ## Using the xctools CLI:

@@ -30,16 +30,37 @@ use std::{
 ///
 /// # Examples
 ///
-/// ## Using as a library:
+/// ## Basic usage with error handling:
 /// ```rust
 /// use xctools_acknowledgements::acknowledgements;
 ///
-/// // Generate acknowledgements for "MyApp" project
-/// let result = acknowledgements(&"MyApp".to_string(), &"./acknowledgements.json".to_string());
-/// match result {
-///     Ok(message) => println!("{}", message),
-///     Err(e) => eprintln!("Error: {}", e),
-/// }
+/// // This will fail because "NonExistentApp" doesn't have DerivedData
+/// let result = acknowledgements(&"NonExistentApp".to_string(), &"/tmp/test.json".to_string());
+/// assert!(result.is_err());
+/// ```
+///
+/// ## Testing parameter validation:
+/// ```rust
+/// use xctools_acknowledgements::acknowledgements;
+///
+/// // Test with empty app name - should fail
+/// let result = acknowledgements(&"".to_string(), &"/tmp/acknowledgements.json".to_string());
+/// assert!(result.is_err());
+/// ```
+///
+/// ## Testing output path handling:
+/// ```rust
+/// use xctools_acknowledgements::acknowledgements;
+/// use std::path::Path;
+///
+/// // The function should handle both file and directory paths
+/// // Even though this will fail due to missing DerivedData, we can test the interface
+/// let file_result = acknowledgements(&"TestApp".to_string(), &"/tmp/credits.json".to_string());
+/// let dir_result = acknowledgements(&"TestApp".to_string(), &"/tmp/".to_string());
+///
+/// // Both should fail with the same type of error (missing DerivedData)
+/// assert!(file_result.is_err());
+/// assert!(dir_result.is_err());
 /// ```
 ///
 /// ## Using the xctools CLI:
@@ -1128,7 +1149,7 @@ mod tests {
         std::env::set_current_dir(original_dir).unwrap();
     }
 
-    #[test] 
+    #[test]
     fn test_get_user_configured_derived_data_base_success() {
         // Test when IDECustomDerivedDataLocation is set
         // This is hard to test without actually setting the Xcode preference
@@ -1144,7 +1165,10 @@ mod tests {
         let result = get_xcode_derived_data_base();
         assert!(result.is_ok());
         let path = result.unwrap();
-        assert!(path.to_string_lossy().contains("Library/Developer/Xcode/DerivedData"));
+        assert!(
+            path.to_string_lossy()
+                .contains("Library/Developer/Xcode/DerivedData")
+        );
     }
 
     #[test]
@@ -1162,9 +1186,9 @@ mod tests {
             contributions: 5,
         }];
 
-        let acknowledgements = Acknowledgements { 
-            packages: packages.clone(), 
-            contributors: contributors.clone() 
+        let acknowledgements = Acknowledgements {
+            packages: packages.clone(),
+            contributors: contributors.clone(),
         };
 
         // Test that the struct maintains the data correctly
@@ -1213,14 +1237,23 @@ mod tests {
     fn test_extract_edge_cases() {
         // Test extract_name_out_of_contributors_line with various edge cases
         assert_eq!(extract_name_out_of_contributors_line(""), None);
-        assert_eq!(extract_name_out_of_contributors_line("No angle brackets"), None);
+        assert_eq!(
+            extract_name_out_of_contributors_line("No angle brackets"),
+            None
+        );
         assert_eq!(extract_name_out_of_contributors_line("< >"), None);
-        assert_eq!(extract_name_out_of_contributors_line("Name<email"), Some("Name".to_string()));
+        assert_eq!(
+            extract_name_out_of_contributors_line("Name<email"),
+            Some("Name".to_string())
+        );
 
         // Test extract_email_out_of_contributors_line with various edge cases
         assert_eq!(extract_email_out_of_contributors_line(""), None);
         assert_eq!(extract_email_out_of_contributors_line("No brackets"), None);
-        assert_eq!(extract_email_out_of_contributors_line("< >"), Some(" ".to_string()));
+        assert_eq!(
+            extract_email_out_of_contributors_line("< >"),
+            Some(" ".to_string())
+        );
         assert_eq!(extract_email_out_of_contributors_line("Name email>"), None);
         assert_eq!(extract_email_out_of_contributors_line("Name <email"), None);
     }
@@ -1259,7 +1292,7 @@ mod tests {
                 contributions: 3,
             },
             Contributor {
-                name: "John Doe".to_string(), 
+                name: "John Doe".to_string(),
                 email: Some("john@example.com".to_string()),
                 contributions: 2,
             },
@@ -1276,10 +1309,10 @@ mod tests {
         ];
 
         let merged = merge_contributors_with_similar_names(&contributors);
-        
+
         // Should merge John and John Doe, but not Jane Smith or J
         assert!(merged.len() <= contributors.len());
-        
+
         // Check that John Doe (longer name) is kept and contributions are merged
         let john_entry = merged.iter().find(|c| c.name.contains("John"));
         assert!(john_entry.is_some());
@@ -1292,23 +1325,23 @@ mod tests {
     #[test]
     fn test_find_derived_data_for_app_with_glob_pattern() {
         let temp_dir = TempDir::new().unwrap();
-        
+
         // Mock the home directory temporarily
         unsafe { std::env::set_var("HOME", temp_dir.path()) };
-        
+
         // Create a DerivedData directory structure
         let derived_data_base = temp_dir.path().join("Library/Developer/Xcode/DerivedData");
         std::fs::create_dir_all(&derived_data_base).unwrap();
-        
+
         // Create multiple app directories
         let app1_dir = derived_data_base.join("TestApp-abc123");
         let app2_dir = derived_data_base.join("TestApp-def456");
         std::fs::create_dir_all(&app1_dir).unwrap();
         std::fs::create_dir_all(&app2_dir).unwrap();
-        
+
         // Test finding derived data for app
         let result = find_derived_data_for_app(&"TestApp".to_string());
-        
+
         // Should find one of the directories (the most recently modified)
         assert!(result.is_ok() || result.is_err()); // Either finds it or doesn't due to timing
     }

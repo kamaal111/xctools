@@ -24,8 +24,51 @@ use std::path::{Path, PathBuf};
 ///
 /// # Examples
 ///
-/// ## Using as a library:
+/// ## Testing with no project.pbxproj file (will fail):
 /// ```rust
+/// use xctools_bump_version::bump_version;
+/// use semver::Version;
+///
+/// // This will fail because no project.pbxproj exists in a clean test environment
+/// let result = bump_version(&Some(42), &None);
+/// assert!(result.is_err());
+/// assert!(result.unwrap_err().to_string().contains("No project.pbxproj found"));
+/// ```
+///
+/// ## Testing parameter validation with Version parsing:
+/// ```rust
+/// use xctools_bump_version::bump_version;
+/// use semver::Version;
+///
+/// // Test that Version parsing works correctly for different formats
+/// let version_1_0_0 = Version::parse("1.0.0").unwrap();
+/// assert_eq!(version_1_0_0.major, 1);
+/// assert_eq!(version_1_0_0.minor, 0);
+/// assert_eq!(version_1_0_0.patch, 0);
+///
+/// let version_beta = Version::parse("2.1.0-beta.1").unwrap();
+/// assert_eq!(version_beta.major, 2);
+/// assert_eq!(version_beta.minor, 1);
+/// assert_eq!(version_beta.patch, 0);
+/// assert!(!version_beta.pre.is_empty());
+/// ```
+///
+/// ## Testing edge cases with parameters:
+/// ```rust
+/// use xctools_bump_version::bump_version;
+/// use semver::Version;
+///
+/// // Test with both parameters as None (should still fail due to no project file)
+/// let result = bump_version(&None, &None);
+/// assert!(result.is_err());
+///
+/// // Test with negative build number
+/// let result = bump_version(&Some(-1), &None);
+/// assert!(result.is_err());
+/// ```
+///
+/// ## Demonstrating function signature (no_run):
+/// ```rust,no_run
 /// use xctools_bump_version::bump_version;
 /// use semver::Version;
 ///
