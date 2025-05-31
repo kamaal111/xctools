@@ -1,5 +1,6 @@
 use anyhow::{Context, Result, anyhow};
 use glob::glob;
+use serde::Deserialize;
 use std::{
     collections::HashMap,
     ffi::OsString,
@@ -8,33 +9,72 @@ use std::{
 };
 
 pub fn acknowledgements(app_name: &String, output: &String) -> Result<String> {
-    let packages_directory = get_packages_directory(app_name)?;
-    let packages_licenses = get_packages_licenses(&packages_directory);
-    println!("{:?}", packages_licenses);
+    let packages_directory = find_derived_data_for_app(app_name)?.join("SourcePackages");
+    let packages_licenses = get_packages_licenses(&packages_directory.join("checkouts"));
+    let packages_urls = get_packages_urls(&packages_directory.join("workspace-state.json"))?;
+    println!("🐸🐸🐸 {:?}", packages_licenses);
+
     Ok(String::from(""))
+}
+
+#[derive(Debug, Deserialize)]
+struct WorkspaceState {
+    object: WorkspaceObject,
+}
+
+#[derive(Debug, Deserialize)]
+struct WorkspaceObject {
+    dependencies: Vec<Dependency>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Dependency {
+    #[serde(rename = "packageRef")]
+    package_ref: PackageRef,
+}
+
+#[derive(Debug, Deserialize)]
+struct PackageRef {
+    name: String,
+    location: String,
+}
+
+struct PackageAcknowledgement {
+    name: String,
+    license: String,
+    author: String,
+    url: String,
+}
+
+fn get_packages_urls(workspace_state_url: &PathBuf) -> Result<HashMap<String, String>> {
+    let workspace_state_json_content = std::fs::read_to_string(workspace_state_url)
+        .map_err(|e| anyhow!(format!("Failed to read workspace-state.json; error='{}'", e)))?;
+    let workspace_state: WorkspaceState = serde_json::from_str(&workspace_state_json_content)
+        .map_err(|e| anyhow!(format!("Failed to parse workspace-state.json; error='{}'", e)))?;
+
+    let packages = workspace_state
+        .object
+        .dependencies
+        .iter()
+        .fold(HashMap::new(), |mut acc, dep| {
+            acc.insert(dep.package_ref.name.clone(), dep.package_ref.location.clone());
+            acc
+        });
+
+    Ok(packages)
 }
 
 fn get_packages_licenses(packages_directory: &PathBuf) -> Result<HashMap<OsString, String>> {
     assert!(packages_directory.is_dir());
 
     let packages_directory_contents = std::fs::read_dir(packages_directory)
-        .map_err(|e| {
-            anyhow!(format!(
-                "Failed to read packages directory contents; error='{}'",
-                e
-            ))
-        })?
+        .map_err(|e| anyhow!(format!("Failed to read packages directory contents; error='{}'", e)))?
         .filter_map(|p| p.ok())
         .filter(|e| e.path().is_dir());
     let mut licenses: HashMap<OsString, String> = HashMap::new();
     for content in packages_directory_contents {
         let package_licenses: Vec<_> = std::fs::read_dir(content.path())
-            .map_err(|e| {
-                anyhow!(format!(
-                    "Failed to read packages directory contents; error='{}'",
-                    e
-                ))
-            })?
+            .map_err(|e| anyhow!(format!("Failed to read packages directory contents; error='{}'", e)))?
             .filter_map(|d| d.ok())
             .map(|d| d.path())
             .filter(|p| {
@@ -60,33 +100,14 @@ fn get_packages_licenses(packages_directory: &PathBuf) -> Result<HashMap<OsStrin
     Ok(licenses)
 }
 
-fn get_packages_directory(app_name: &String) -> Result<PathBuf> {
-    let result = find_derived_data_for_app(app_name)?
-        .join("SourcePackages/checkouts")
-        .clone();
-
-    Ok(result)
-}
-
 fn find_derived_data_for_app(app_name: &String) -> Result<PathBuf> {
     let xcode_derived_data_base_display = get_xcode_derived_data_base()?;
-    let glob_pattern = format!(
-        "{}-*",
-        xcode_derived_data_base_display.join(app_name).display()
-    );
+    let glob_pattern = format!("{}-*", xcode_derived_data_base_display.join(app_name).display());
 
     glob(&glob_pattern)
-        .map_err(|e| {
-            anyhow!(format!(
-                "Failed to search through derived data; error={}",
-                e
-            ))
-        })
+        .map_err(|e| anyhow!(format!("Failed to search through derived data; error={}", e)))
         .and_then(|matches| {
-            let mut paths: Vec<_> = matches
-                .filter_map(|p| p.ok())
-                .filter(|p| p.is_dir())
-                .collect();
+            let mut paths: Vec<_> = matches.filter_map(|p| p.ok()).filter(|p| p.is_dir()).collect();
             // Sort by last modified, the first in the list being latest updated
             paths.sort_by(|a, b| {
                 let a_modified = std::fs::metadata(a)

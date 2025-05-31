@@ -38,6 +38,10 @@ test-cov-output:
 test-cov-json:
     cargo llvm-cov --json | jq '{"coverage_pct": .data[0].totals.lines.percent, "lines_covered": .data[0].totals.lines.covered, "lines_total": .data[0].totals.lines.count, "functions_covered": .data[0].totals.functions.covered, "functions_total": .data[0].totals.functions.count}'
 
+# Test with coverage and open HTML
+test-cov-html-open:
+    cargo llvm-cov --open
+
 # Build project
 build:
     cargo build --release
@@ -50,14 +54,13 @@ build-crate crate:
 build-dev:
     cargo build
 
+# Format code
+format:
+    cargo fmt
+
 # Build specific crate in debug
 build-dev-crate crate:
     cargo build -p {{ crate }}
-
-# Test with coverage and open HTML
-test-cov-html-open:
-    cargo llvm-cov --open
-
 # Run dev command to build for macOS
 dev-build-mac-cmd:
     cargo run -- build --schema "$TEST_SCHEMA" --destination "$MACOS_DESTINATION" --project "$TEST_PROJECT" --configuration debug
