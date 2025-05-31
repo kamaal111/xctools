@@ -19,3 +19,4 @@ xctools-acknowledgements = { path = "../xctools-acknowledgements" }
 assert_cmd = { workspace = true }
 predicates = { workspace = true }
 tempfile = { workspace = true }
+serde_json = { workspace = true }

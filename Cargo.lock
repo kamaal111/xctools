@@ -572,6 +572,7 @@ dependencies = [
  "glob",
  "serde",
  "serde_json",
+ "tempfile",
 ]
 
 [[package]]
@@ -606,6 +607,7 @@ dependencies = [
  "clap",
  "predicates",
  "semver",
+ "serde_json",
  "tempfile",
  "xctools-acknowledgements",
  "xctools-build",
