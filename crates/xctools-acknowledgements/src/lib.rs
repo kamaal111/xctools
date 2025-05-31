@@ -6,7 +6,6 @@ use std::{
     ffi::OsStr,
     path::PathBuf,
     process::{Command, Stdio},
-    str::SplitWhitespace,
 };
 
 /// Generates acknowledgements file for Swift Package Manager dependencies and git contributors.
@@ -107,11 +106,8 @@ struct Acknowledgements {
 }
 
 impl Acknowledgements {
-    fn new(
-        packages: &Vec<PackageAcknowledgement>,
-        contributors: &Vec<Contributor>,
-    ) -> Acknowledgements {
-        Acknowledgements {
+    fn new(packages: &Vec<PackageAcknowledgement>, contributors: &Vec<Contributor>) -> Self {
+        Self {
             packages: packages.clone(),
             contributors: contributors.clone(),
         }
@@ -126,32 +122,36 @@ struct Contributor {
 }
 
 impl Contributor {
-    fn new(name: &String, email: Option<&String>, contributions: &i64) -> Contributor {
-        Contributor {
+    fn new(name: &String, email: Option<&String>, contributions: &i64) -> Self {
+        Self {
             name: name.clone(),
             email: email.cloned(),
             contributions: *contributions,
         }
     }
 
-    fn without_email(&self) -> Contributor {
-        Contributor::new(&self.name, None, &self.contributions)
+    fn without_email(&self) -> Self {
+        Self::new(&self.name, None, &self.contributions)
     }
 
     fn first_name(&self) -> Option<&str> {
-        self.name_parts().nth(0)
+        let parts = self.name_parts();
+        if parts.len() == 0 {
+            return None;
+        }
+
+        Some(parts[0])
     }
 
     fn has_only_a_single_name(&self) -> bool {
-        self.collected_name_parts().len() == 1
+        self.name_parts().len() == 1
     }
 
-    fn name_parts(&self) -> SplitWhitespace<'_> {
-        self.name.split_whitespace()
-    }
-
-    fn collected_name_parts(&self) -> Vec<&str> {
-        self.name_parts().collect()
+    fn name_parts(&self) -> Vec<&str> {
+        self.name
+            .split_whitespace()
+            .map(|part| part.trim())
+            .collect()
     }
 }
 
@@ -186,13 +186,8 @@ struct PackageAcknowledgement {
 }
 
 impl PackageAcknowledgement {
-    fn new(
-        name: &String,
-        license: Option<&String>,
-        author: &String,
-        url: &String,
-    ) -> PackageAcknowledgement {
-        PackageAcknowledgement {
+    fn new(name: &String, license: Option<&String>, author: &String, url: &String) -> Self {
+        Self {
             name: name.clone(),
             license: license.cloned(),
             author: author.clone(),
@@ -297,8 +292,7 @@ fn merge_contributors_with_similar_names(contributors: &Vec<Contributor>) -> Vec
                     let name_is_the_same = contributor.name == c.name;
                     let one_of_authors_has_just_a_single_name =
                         (contributor.has_only_a_single_name() || c.has_only_a_single_name())
-                            && contributor.collected_name_parts().len()
-                                != c.collected_name_parts().len();
+                            && contributor.name_parts().len() != c.name_parts().len();
 
                     first_name_is_the_same
                         && (name_is_the_same || one_of_authors_has_just_a_single_name)
@@ -1206,7 +1200,7 @@ mod tests {
             contributions: 1,
         };
 
-        let parts = contributor.collected_name_parts();
+        let parts = contributor.name_parts();
         assert_eq!(parts, vec!["John", "Doe", "Smith"]);
 
         let single_name_contributor = Contributor {
@@ -1215,7 +1209,7 @@ mod tests {
             contributions: 1,
         };
 
-        let single_parts = single_name_contributor.collected_name_parts();
+        let single_parts = single_name_contributor.name_parts();
         assert_eq!(single_parts, vec!["John"]);
     }
 
