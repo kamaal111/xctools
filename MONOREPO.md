@@ -8,19 +8,19 @@ This project has been restructured as a mini monorepo with separate libraries fo
 xctools/
 ├── Cargo.toml                    # Workspace root
 ├── crates/
-│   ├── xctools-acknowledgements/ # Acknowledgements generation library
+│   ├── xctools_acknowledgements/ # Acknowledgements generation library
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       └── lib.rs
-│   ├── xctools-build/           # Build command library
+│   ├── xctools_build/           # Build command library
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       └── lib.rs
-│   ├── xctools-bump-version/    # Version bumping library  
+│   ├── xctools_bump_version/    # Version bumping library
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       └── lib.rs
-│   └── xctools-cli/             # Main CLI application
+│   └── xctools_cli/             # Main CLI application
 │       ├── Cargo.toml
 │       ├── src/
 │       │   └── main.rs
@@ -30,7 +30,7 @@ xctools/
 
 ## Libraries
 
-### `xctools-acknowledgements`
+### `xctools_acknowledgements`
 
 Contains the acknowledgements generation functionality:
 - `acknowledgements()` function for generating acknowledgements files
@@ -39,21 +39,21 @@ Contains the acknowledgements generation functionality:
 - Gathers git contributor information from commit history
 - Outputs structured JSON acknowledgements file
 
-### `xctools-build`
+### `xctools_build`
 
 Contains the Xcode build functionality:
 - `Configuration` enum for Debug/Release builds
 - `build()` function for executing xcodebuild commands
 - `BuildTarget` struct for handling project/workspace targets
 
-### `xctools-bump-version`
+### `xctools_bump_version`
 
 Contains the version bumping functionality:
 - `bump_version()` function for updating project.pbxproj files
 - Support for updating both build numbers and marketing versions
 - Automatic discovery of project.pbxproj files in the workspace
 
-### `xctools-cli`
+### `xctools_cli`
 
 The main command-line interface that:
 - Uses clap for argument parsing
@@ -67,10 +67,10 @@ The main command-line interface that:
 cargo build
 
 # Build specific crate
-cargo build -p xctools-cli
-cargo build -p xctools-acknowledgements
-cargo build -p xctools-build
-cargo build -p xctools-bump-version
+cargo build -p xctools_cli
+cargo build -p xctools_acknowledgements
+cargo build -p xctools_build
+cargo build -p xctools_bump_version
 ```
 
 ## Testing
@@ -80,10 +80,10 @@ cargo build -p xctools-bump-version
 cargo test
 
 # Run tests for specific crate
-cargo test -p xctools-cli
-cargo test -p xctools-acknowledgements
-cargo test -p xctools-build
-cargo test -p xctools-bump-version
+cargo test -p xctools_cli
+cargo test -p xctools_acknowledgements
+cargo test -p xctools_build
+cargo test -p xctools_bump_version
 ```
 
 ## Benefits of this Structure

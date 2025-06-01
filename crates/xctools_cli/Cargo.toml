@@ -1,5 +1,5 @@
 [package]
-name = "xctools-cli"
+name = "xctools_cli"
 version = "0.1.0"
 edition = "2024"
 
@@ -11,9 +11,9 @@ path = "src/main.rs"
 anyhow = { workspace = true }
 clap = { workspace = true }
 semver = { workspace = true }
-xctools-build = { path = "../xctools-build" }
-xctools-bump-version = { path = "../xctools-bump-version" }
-xctools-acknowledgements = { path = "../xctools-acknowledgements" }
+xctools_build = { path = "../xctools_build" }
+xctools_bump_version = { path = "../xctools_bump_version" }
+xctools_acknowledgements = { path = "../xctools_acknowledgements" }
 xcbuild_common = { path = "../xcbuild_common" }
 
 [dev-dependencies]

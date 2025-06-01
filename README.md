@@ -4,13 +4,13 @@ A command-line tool for Xcode project management, structured as a mini monorepo 
 
 - [XCTools](#xctools)
   - [Overview](#overview)
-  - [Monorepo Structure](#monorepo-structure)
   - [Installation](#installation)
   - [Usage](#usage)
     - [Build Command](#build-command)
     - [Bump Version Command](#bump-version-command)
     - [Acknowledgements Command](#acknowledgements-command)
   - [Development](#development)
+    - [Monorepo Structure](#monorepo-structure)
     - [Building](#building)
     - [Testing](#testing)
     - [Using Just](#using-just)
@@ -23,32 +23,10 @@ XCTools provides utilities for working with Xcode projects:
 - **Bump Version**: Update project version numbers and build numbers
 - **Acknowledgements**: Generate acknowledgements files for Swift Package Manager dependencies and git contributors
 
-## Monorepo Structure
-
-This project is organized as a Cargo workspace with separate crates:
-
-```
-xctools/
-├── Cargo.toml                    # Workspace root
-├── crates/
-│   ├── xctools-acknowledgements/ # Acknowledgements generation library
-│   ├── xctools-build/            # Build command library
-│   ├── xctools-bump-version/     # Version bumping library
-│   └── xctools-cli/              # Main CLI application
-└── MONOREPO.md                   # Detailed monorepo documentation
-```
-
-- **`xctools-acknowledgements`**: Library for generating acknowledgements files
-- **`xctools-build`**: Library for Xcode build operations
-- **`xctools-bump-version`**: Library for version management  
-- **`xctools-cli`**: Main CLI application that combines the libraries
-
-See [MONOREPO.md](MONOREPO.md) for detailed information about the structure and benefits.
-
 ## Installation
 
 ```bash
-cargo install --path crates/xctools-cli
+cargo install --path crates/xctools_cli
 ```
 
 Or build from source:
@@ -109,6 +87,28 @@ The acknowledgements command:
 
 ## Development
 
+### Monorepo Structure
+
+This project is organized as a Cargo workspace with separate crates:
+
+```
+xctools/
+├── Cargo.toml                    # Workspace root
+├── crates/
+│   ├── xctools_acknowledgements/ # Acknowledgements generation library
+│   ├── xctools_build/            # Build command library
+│   ├── xctools_bump_version/     # Version bumping library
+│   └── xctools_cli/              # Main CLI application
+└── MONOREPO.md                   # Detailed monorepo documentation
+```
+
+- **`xctools_acknowledgements`**: Library for generating acknowledgements files
+- **`xctools_build`**: Library for Xcode build operations
+- **`xctools_bump_version`**: Library for version management
+- **`xctools_cli`**: Main CLI application that combines the libraries
+
+See [MONOREPO.md](MONOREPO.md) for detailed information about the structure and benefits.
+
 ### Building
 
 ```bash
@@ -116,7 +116,7 @@ The acknowledgements command:
 cargo build
 
 # Build specific crate
-just build-crate xctools-cli
+just build-crate xctools_cli
 ```
 
 ### Testing
@@ -129,7 +129,7 @@ cargo test
 just test-units
 
 # Run tests for specific crate
-just test-crate xctools-build
+just test-crate xctools_build
 ```
 
 ### Using Just
@@ -147,7 +147,7 @@ just test-cov
 just build
 
 # Test specific crate
-just test-crate xctools-acknowledgements
+just test-crate xctools_acknowledgements
 ```
 
 ## License

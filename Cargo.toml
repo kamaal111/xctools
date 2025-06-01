@@ -1,9 +1,11 @@
 [workspace]
 members = [
-    "crates/xctools-acknowledgements",
-    "crates/xctools-build",
-    "crates/xctools-bump-version",
-    "crates/xctools-cli",
+    "crates/xctools_acknowledgements",
+    "crates/xctools_build",
+    "crates/xctools_bump_version",
+    "crates/xctools_cli",
+    "crates/xctools_test",
+    "crates/xcbuild_common",
 ]
 resolver = "2"
 
