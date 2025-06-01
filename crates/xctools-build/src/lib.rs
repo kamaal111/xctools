@@ -1,37 +1,7 @@
 use std::process::Command;
 
 use anyhow::Context;
-use clap::ValueEnum;
-
-#[derive(ValueEnum, Clone, Debug)]
-pub enum Configuration {
-    Debug,
-    Release,
-}
-
-impl Configuration {
-    pub fn command_string(&self) -> String {
-        match self {
-            Configuration::Debug => String::from("Debug"),
-            Configuration::Release => String::from("Release"),
-        }
-    }
-}
-
-impl Default for Configuration {
-    fn default() -> Self {
-        Self::Debug
-    }
-}
-
-impl std::fmt::Display for Configuration {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Configuration::Debug => write!(f, "debug"),
-            Configuration::Release => write!(f, "release"),
-        }
-    }
-}
+use xcbuild_common::Configuration;
 
 /// Builds an Xcode project or workspace using the `xcodebuild` command-line tool.
 ///
@@ -61,7 +31,8 @@ impl std::fmt::Display for Configuration {
 ///
 /// ## Testing parameter validation - neither project nor workspace:
 /// ```rust
-/// use xctools_build::{build, Configuration};
+/// use xctools_build::build;
+/// use xcbuild_common::Configuration;
 ///
 /// // This should fail because neither project nor workspace is specified
 /// let result = build(
@@ -78,7 +49,7 @@ impl std::fmt::Display for Configuration {
 ///
 /// ## Testing Configuration enum usage:
 /// ```rust
-/// use xctools_build::{Configuration};
+/// use xcbuild_common::Configuration;
 ///
 /// // Test Configuration enum values
 /// assert_eq!(Configuration::Debug.command_string(), "Debug");
@@ -89,7 +60,8 @@ impl std::fmt::Display for Configuration {
 ///
 /// ## Testing with project parameter (will attempt to build):
 /// ```rust,no_run
-/// use xctools_build::{build, Configuration};
+/// use xctools_build::build;
+/// use xcbuild_common::Configuration;
 ///
 /// // This example shows the function signature but doesn't run
 /// // because it would try to execute xcodebuild with a non-existent project
@@ -106,7 +78,8 @@ impl std::fmt::Display for Configuration {
 ///
 /// ## Testing with workspace parameter (will attempt to build):
 /// ```rust,no_run
-/// use xctools_build::{build, Configuration};
+/// use xctools_build::build;
+/// use xcbuild_common::Configuration;
 ///
 /// // This example shows the function signature but doesn't run
 /// // because it would try to execute xcodebuild with a non-existent workspace

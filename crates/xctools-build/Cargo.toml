@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 anyhow = { workspace = true }
-clap = { workspace = true }
+xcbuild_common = { path = "../xcbuild_common" }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }

@@ -1,6 +1,7 @@
 use clap::{ArgGroup, Parser, Subcommand, builder::ValueParser};
+use xcbuild_common::Configuration;
 use xctools_acknowledgements::acknowledgements;
-use xctools_build::{Configuration, build};
+use xctools_build::build;
 use xctools_bump_version::bump_version;
 
 #[derive(Parser, Debug)]

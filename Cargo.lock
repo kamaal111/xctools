@@ -565,6 +565,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "xcbuild_common"
+version = "0.1.0"
+dependencies = [
+ "clap",
+]
+
+[[package]]
 name = "xctools-acknowledgements"
 version = "0.1.0"
 dependencies = [
@@ -581,9 +588,9 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
- "clap",
  "predicates",
  "tempfile",
+ "xcbuild_common",
 ]
 
 [[package]]
@@ -609,6 +616,7 @@ dependencies = [
  "semver",
  "serde_json",
  "tempfile",
+ "xcbuild_common",
  "xctools-acknowledgements",
  "xctools-build",
  "xctools-bump-version",
