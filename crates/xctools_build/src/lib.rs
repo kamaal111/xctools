@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use anyhow::Context;
-use xcbuild_common::Configuration;
+use xcbuild_common::{BuildTarget, Configuration};
 
 /// Builds an Xcode project or workspace using the `xcodebuild` command-line tool.
 ///
@@ -148,44 +148,6 @@ pub fn build(
     };
 
     String::from_utf8(output.stdout).context("Failed to decode output")
-}
-
-struct BuildTarget {
-    project: Option<String>,
-    workspace: Option<String>,
-}
-
-impl BuildTarget {
-    fn new(project: Option<&String>, workspace: Option<&String>) -> Self {
-        Self {
-            project: project.cloned(),
-            workspace: workspace.cloned(),
-        }
-    }
-
-    fn project_or_workspace_string(&self) -> anyhow::Result<String> {
-        if let Some(project) = &self.project {
-            return Ok(project.clone());
-        }
-
-        if let Some(workspace) = &self.workspace {
-            return Ok(workspace.clone());
-        }
-
-        anyhow::bail!("Neither project nor workspace is specified")
-    }
-
-    fn project_or_workspace_argument(&self) -> anyhow::Result<String> {
-        if let Some(project) = &self.project {
-            return Ok(format!("-project {}", project));
-        }
-
-        if let Some(workspace) = &self.workspace {
-            return Ok(format!("-workspace {}", workspace));
-        }
-
-        anyhow::bail!("Neither project nor workspace is specified")
-    }
 }
 
 fn build_command(

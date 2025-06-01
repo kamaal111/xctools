@@ -3,6 +3,7 @@ use xcbuild_common::Configuration;
 use xctools_acknowledgements::acknowledgements;
 use xctools_build::build;
 use xctools_bump_version::bump_version;
+use xctools_test::test;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -13,13 +14,41 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    /// Build Xcode project.
+    /// Build Xcode project
     #[command(group(
         ArgGroup::new("target")
             .required(true)
             .args(["project", "workspace"]),
     ))]
     Build {
+        /// The Xcode scheme to build.
+        #[arg(short, long)]
+        schema: String,
+
+        /// The build destination (e.g., "iOS Simulator,name=iPhone 15 Pro").
+        #[arg(short, long)]
+        destination: String,
+
+        /// Configuration - "Debug" or "Release"
+        #[arg(short, long, default_value_t = Configuration::default())]
+        configuration: Configuration,
+
+        /// Xcode project folder (.xcodeproj)
+        #[arg(short, long)]
+        project: Option<String>,
+
+        /// Xcode workspace file (.xcworkspace)
+        #[arg(short, long)]
+        workspace: Option<String>,
+    },
+
+    /// Test Xcode project
+    #[command(group(
+        ArgGroup::new("target")
+            .required(true)
+            .args(["project", "workspace"]),
+    ))]
+    Test {
         /// The Xcode scheme to build.
         #[arg(short, long)]
         schema: String,
@@ -86,6 +115,13 @@ fn main() {
             version_number,
         } => bump_version(&build_number, &version_number),
         Commands::Acknowledgements { app_name, output } => acknowledgements(&app_name, &output),
+        Commands::Test {
+            schema,
+            destination,
+            configuration,
+            project,
+            workspace,
+        } => test(&schema, &destination, &configuration, &project, &workspace),
     };
     match output_result {
         Err(error) => {

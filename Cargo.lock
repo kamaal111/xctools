@@ -568,6 +568,7 @@ dependencies = [
 name = "xcbuild_common"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "clap",
 ]
 
@@ -620,6 +621,7 @@ dependencies = [
  "xctools_acknowledgements",
  "xctools_build",
  "xctools_bump_version",
+ "xctools_test",
 ]
 
 [[package]]

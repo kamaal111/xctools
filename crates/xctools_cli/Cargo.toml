@@ -14,6 +14,7 @@ semver = { workspace = true }
 xctools_build = { path = "../xctools_build" }
 xctools_bump_version = { path = "../xctools_bump_version" }
 xctools_acknowledgements = { path = "../xctools_acknowledgements" }
+xctools_test = { path = "../xctools_test" }
 xcbuild_common = { path = "../xcbuild_common" }
 
 [dev-dependencies]
