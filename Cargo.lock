@@ -596,9 +596,6 @@ name = "xctools_build"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "assert_cmd",
- "predicates",
- "tempfile",
  "xcbuild_common",
 ]
 
@@ -607,9 +604,7 @@ name = "xctools_bump_version"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "assert_cmd",
  "glob",
- "predicates",
  "semver",
  "tempfile",
 ]
