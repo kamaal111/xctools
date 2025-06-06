@@ -8,11 +8,19 @@ This project has been restructured as a mini monorepo with separate libraries fo
 xctools/
 ├── Cargo.toml                    # Workspace root
 ├── crates/
+│   ├── xcbuild_common/          # Shared Xcode build functionality
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       └── lib.rs
 │   ├── xctools_acknowledgements/ # Acknowledgements generation library
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       └── lib.rs
 │   ├── xctools_build/           # Build command library
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       └── lib.rs
+│   ├── xctools_test/            # Test command library
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       └── lib.rs
@@ -30,6 +38,15 @@ xctools/
 
 ## Libraries
 
+### `xcbuild_common`
+
+Contains shared functionality for Xcode build operations:
+- `Configuration` enum for Debug/Release builds with command string conversion
+- `BuildTarget` struct for handling project/workspace targets
+- `XcodebuildCommandAction` enum for Build/Test actions
+- `run_xcodebuild_command()` function for executing xcodebuild commands
+- `make_xcodebuild_command()` helper for constructing command strings
+
 ### `xctools_acknowledgements`
 
 Contains the acknowledgements generation functionality:
@@ -42,9 +59,15 @@ Contains the acknowledgements generation functionality:
 ### `xctools_build`
 
 Contains the Xcode build functionality:
-- `Configuration` enum for Debug/Release builds
-- `build()` function for executing xcodebuild commands
-- `BuildTarget` struct for handling project/workspace targets
+- `build()` function for executing xcodebuild build commands  
+- Uses shared `Configuration`, `BuildTarget`, and `XcodebuildCommandAction` from `xcbuild_common`
+
+### `xctools_test`
+
+Contains the Xcode test functionality:
+- `test()` function for running xcodebuild test commands
+- Support for unit tests, UI tests, integration tests, and performance tests
+- Uses shared `Configuration`, `BuildTarget`, and `XcodebuildCommandAction` from `xcbuild_common`
 
 ### `xctools_bump_version`
 
@@ -67,9 +90,11 @@ The main command-line interface that:
 cargo build
 
 # Build specific crate
+cargo build -p xcbuild_common
 cargo build -p xctools_cli
 cargo build -p xctools_acknowledgements
 cargo build -p xctools_build
+cargo build -p xctools_test
 cargo build -p xctools_bump_version
 ```
 
@@ -80,9 +105,11 @@ cargo build -p xctools_bump_version
 cargo test
 
 # Run tests for specific crate
+cargo test -p xcbuild_common
 cargo test -p xctools_cli
 cargo test -p xctools_acknowledgements
 cargo test -p xctools_build
+cargo test -p xctools_test
 cargo test -p xctools_bump_version
 ```
 
@@ -101,6 +128,9 @@ The CLI interface remains unchanged:
 ```bash
 # Build Xcode project
 xctools build --schema MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj
+
+# Run Xcode tests
+xctools test --schema MyAppTests --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj
 
 # Bump version
 xctools bump-version --build-number 42 --version-number 2.1.0

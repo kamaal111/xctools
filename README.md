@@ -7,6 +7,7 @@ A command-line tool for Xcode project management, structured as a mini monorepo 
   - [Installation](#installation)
   - [Usage](#usage)
     - [Build Command](#build-command)
+    - [Test Command](#test-command)
     - [Bump Version Command](#bump-version-command)
     - [Acknowledgements Command](#acknowledgements-command)
   - [Development](#development)
@@ -20,6 +21,7 @@ A command-line tool for Xcode project management, structured as a mini monorepo 
 
 XCTools provides utilities for working with Xcode projects:
 - **Build**: Execute xcodebuild commands with various configurations
+- **Test**: Run unit tests, UI tests, and integration tests for Xcode projects
 - **Bump Version**: Update project version numbers and build numbers
 - **Acknowledgements**: Generate acknowledgements files for Swift Package Manager dependencies and git contributors
 
@@ -49,6 +51,22 @@ xctools build --schema MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --
 
 # Build with specific configuration
 xctools build --schema MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj --configuration release
+```
+
+### Test Command
+
+```bash
+# Run unit tests with project file
+xctools test --schema MyAppTests --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj
+
+# Run UI tests with workspace file  
+xctools test --schema MyAppUITests --destination "iOS Simulator,name=iPhone 15 Pro" --workspace MyApp.xcworkspace
+
+# Run tests with specific configuration
+xctools test --schema MyAppTests --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj --configuration release
+
+# Run tests for macOS
+xctools test --schema MyAppTests --destination "platform=macOS" --project MyApp.xcodeproj
 ```
 
 ### Bump Version Command
@@ -95,15 +113,19 @@ This project is organized as a Cargo workspace with separate crates:
 xctools/
 ├── Cargo.toml                    # Workspace root
 ├── crates/
+│   ├── xcbuild_common/          # Shared Xcode build functionality
 │   ├── xctools_acknowledgements/ # Acknowledgements generation library
 │   ├── xctools_build/            # Build command library
+│   ├── xctools_test/             # Test command library
 │   ├── xctools_bump_version/     # Version bumping library
 │   └── xctools_cli/              # Main CLI application
 └── MONOREPO.md                   # Detailed monorepo documentation
 ```
 
+- **`xcbuild_common`**: Shared library for Xcode build operations and common types
 - **`xctools_acknowledgements`**: Library for generating acknowledgements files
 - **`xctools_build`**: Library for Xcode build operations
+- **`xctools_test`**: Library for running Xcode tests
 - **`xctools_bump_version`**: Library for version management
 - **`xctools_cli`**: Main CLI application that combines the libraries
 
