@@ -16,6 +16,10 @@ xctools/
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       └── lib.rs
+│   ├── xctools_archive/         # Archive creation library
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       └── lib.rs
 │   ├── xctools_build/           # Build command library
 │   │   ├── Cargo.toml
 │   │   └── src/
@@ -56,6 +60,15 @@ Contains the acknowledgements generation functionality:
 - Gathers git contributor information from commit history
 - Outputs structured JSON acknowledgements file
 
+### `xctools_archive`
+
+Contains the Xcode archive functionality:
+- `archive()` function for creating .xcarchive bundles using xcodebuild archive commands
+- Supports iOS and macOS archive creation with proper SDK selection
+- Creates archives for App Store submission, enterprise distribution, and testing
+- Uses shared `Configuration`, `BuildTarget`, `SDK`, and `XcodebuildCommandAction` from `xcbuild_common`
+- Generates archives with debug symbols (dSYMs) for crash symbolication
+
 ### `xctools_build`
 
 Contains the Xcode build functionality:
@@ -93,6 +106,7 @@ cargo build
 cargo build -p xcbuild_common
 cargo build -p xctools_cli
 cargo build -p xctools_acknowledgements
+cargo build -p xctools_archive
 cargo build -p xctools_build
 cargo build -p xctools_test
 cargo build -p xctools_bump_version
@@ -108,6 +122,7 @@ cargo test
 cargo test -p xcbuild_common
 cargo test -p xctools_cli
 cargo test -p xctools_acknowledgements
+cargo test -p xctools_archive
 cargo test -p xctools_build
 cargo test -p xctools_test
 cargo test -p xctools_bump_version
@@ -131,6 +146,9 @@ xctools build --schema MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --
 
 # Run Xcode tests
 xctools test --schema MyAppTests --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj
+
+# Create Xcode archive
+xctools archive --schema MyApp --destination "generic/platform=iOS" --sdk iphoneos --output MyApp.xcarchive --project MyApp.xcodeproj --configuration release
 
 # Bump version
 xctools bump-version --build-number 42 --version-number 2.1.0

@@ -8,6 +8,7 @@ A command-line tool for Xcode project management, structured as a mini monorepo 
   - [Usage](#usage)
     - [Build Command](#build-command)
     - [Test Command](#test-command)
+    - [Archive Command](#archive-command)
     - [Bump Version Command](#bump-version-command)
     - [Acknowledgements Command](#acknowledgements-command)
   - [Development](#development)
@@ -22,6 +23,7 @@ A command-line tool for Xcode project management, structured as a mini monorepo 
 XCTools provides utilities for working with Xcode projects:
 - **Build**: Execute xcodebuild commands with various configurations
 - **Test**: Run unit tests, UI tests, and integration tests for Xcode projects
+- **Archive**: Create .xcarchive bundles for distribution and App Store submission
 - **Bump Version**: Update project version numbers and build numbers
 - **Acknowledgements**: Generate acknowledgements files for Swift Package Manager dependencies and git contributors
 
@@ -67,6 +69,22 @@ xctools test --schema MyAppTests --destination "iOS Simulator,name=iPhone 15 Pro
 
 # Run tests for macOS
 xctools test --schema MyAppTests --destination "platform=macOS" --project MyApp.xcodeproj
+```
+
+### Archive Command
+
+```bash
+# Create iOS archive with project file and Release configuration
+xctools archive --schema MyApp --destination "generic/platform=iOS" --sdk iphoneos --output MyApp.xcarchive --project MyApp.xcodeproj --configuration release
+
+# Create macOS archive with workspace file
+xctools archive --schema MyApp --destination "generic/platform=macOS" --sdk macosx --output MyApp.xcarchive --workspace MyApp.xcworkspace --configuration release
+
+# Create archive with custom output path
+xctools archive --schema MyApp --destination "generic/platform=iOS" --sdk iphoneos --output ./build/archives/MyApp-v1.0.xcarchive --project MyApp.xcodeproj
+
+# Create Debug archive (for testing)
+xctools archive --schema MyApp --destination "generic/platform=iOS" --sdk iphoneos --output MyApp-Debug.xcarchive --project MyApp.xcodeproj --configuration debug
 ```
 
 ### Bump Version Command
@@ -115,6 +133,7 @@ xctools/
 ├── crates/
 │   ├── xcbuild_common/          # Shared Xcode build functionality
 │   ├── xctools_acknowledgements/ # Acknowledgements generation library
+│   ├── xctools_archive/          # Archive creation library
 │   ├── xctools_build/            # Build command library
 │   ├── xctools_test/             # Test command library
 │   ├── xctools_bump_version/     # Version bumping library
@@ -124,6 +143,7 @@ xctools/
 
 - **`xcbuild_common`**: Shared library for Xcode build operations and common types
 - **`xctools_acknowledgements`**: Library for generating acknowledgements files
+- **`xctools_archive`**: Library for creating .xcarchive bundles for distribution
 - **`xctools_build`**: Library for Xcode build operations
 - **`xctools_test`**: Library for running Xcode tests
 - **`xctools_bump_version`**: Library for version management
