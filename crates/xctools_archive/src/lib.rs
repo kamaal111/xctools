@@ -1,5 +1,7 @@
 use anyhow::Result;
-use xcbuild_common::{Configuration, SDK};
+use xcbuild_common::{
+    BuildTarget, Configuration, SDK, XcodebuildCommandAction, run_xcodebuild_command,
+};
 
 pub fn archive(
     schema: &String,
@@ -10,5 +12,16 @@ pub fn archive(
     project: &Option<String>,
     workspace: &Option<String>,
 ) -> Result<String> {
-    Ok("Yes".to_string())
+    let target = BuildTarget::new(project.as_ref(), workspace.as_ref());
+    let output = run_xcodebuild_command(
+        &XcodebuildCommandAction::Archive,
+        schema,
+        destination,
+        configuration,
+        &target,
+        Some(sdk),
+        Some(output),
+    )?;
+
+    Ok(output)
 }

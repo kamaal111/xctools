@@ -108,18 +108,18 @@ enum Commands {
     ))]
     Archive {
         /// The Xcode scheme to build.
-        #[arg(short, long)]
+        #[arg(long)]
         schema: String,
 
         /// The build destination (e.g., "iOS Simulator,name=iPhone 15 Pro").
         #[arg(short, long)]
         destination: String,
 
-        /// SDK to use to perform the archiving
-        #[arg(short, long)]
+        /// SDK to use to perform the archiving - "iphoneos" or "macosx"
+        #[arg(long)]
         sdk: SDK,
 
-        /// Configuration - "Debug" or "Release"
+        /// Configuration - "debug" or "release"
         #[arg(short, long, default_value_t = Configuration::default())]
         configuration: Configuration,
 

@@ -65,11 +65,13 @@ build-dev-crate crate:
 
 # Run dev command to build for macOS
 dev-build-mac-cmd:
-    {{ CARGO }} run -- build --schema "{{ TEST_SCHEMA }}" --destination "{{ MACOS_DESTINATION }}" --project "{{ TEST_PROJECT }}" --configuration debug
+    {{ CARGO }} run -- build --schema "{{ TEST_SCHEMA }}" --destination "{{ MACOS_DESTINATION }}" \
+        --project "{{ TEST_PROJECT }}" --configuration debug
 
 # Run dev command to build for iOS
 dev-build-ios-cmd:
-    {{ CARGO }} run -- build --schema "{{ TEST_SCHEMA }}" --destination "{{ IOS_DESTINATION }}" --project "{{ TEST_PROJECT }}" --configuration release
+    {{ CARGO }} run -- build --schema "{{ TEST_SCHEMA }}" --destination "{{ IOS_DESTINATION }}" \
+        --project "{{ TEST_PROJECT }}" --configuration release
 
 # Run dev command to bump version
 dev-bump-version-cmd:
@@ -77,11 +79,18 @@ dev-bump-version-cmd:
 
 # Run dev command to test for macOS
 dev-test-mac-cmd:
-    {{ CARGO }} run -- test --schema "{{ TEST_SCHEMA }}" --destination "{{ MACOS_DESTINATION }}" --project "{{ TEST_PROJECT }}" --configuration debug
+    {{ CARGO }} run -- test --schema "{{ TEST_SCHEMA }}" --destination "{{ MACOS_DESTINATION }}" \
+        --project "{{ TEST_PROJECT }}" --configuration debug
 
 # Run dev command to test for iOS
 dev-test-ios-cmd:
-    {{ CARGO }} run -- test --schema "{{ TEST_SCHEMA }}" --destination "{{ IPHONE_16_PRO_DESTINATION }}" --project "{{ TEST_PROJECT }}" --configuration debug
+    {{ CARGO }} run -- test --schema "{{ TEST_SCHEMA }}" --destination "{{ IPHONE_16_PRO_DESTINATION }}" \
+        --project "{{ TEST_PROJECT }}" --configuration debug
+
+# Run dev command to archive macOS app
+dev-archive-mac-cmd:
+    {{ CARGO }} run -- archive --schema "{{ TEST_SCHEMA }}" --destination "{{ MACOS_DESTINATION }}" \
+        --project "{{ TEST_PROJECT }}" --configuration debug --sdk macosx --output ./archival.xcarchive
 
 # Run help command
 help:

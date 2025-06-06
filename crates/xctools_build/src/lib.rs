@@ -130,6 +130,8 @@ pub fn build(
         destination,
         configuration,
         &target,
+        None,
+        None,
     )?;
 
     Ok(output)

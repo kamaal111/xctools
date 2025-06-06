@@ -9,9 +9,19 @@ pub fn run_xcodebuild_command(
     destination: &String,
     configuration: &Configuration,
     target: &BuildTarget,
+    sdk: Option<&SDK>,
+    archive_path: Option<&String>,
 ) -> Result<String> {
     let project_or_workspace = target.project_or_workspace_string()?;
-    let command = make_xcodebuild_command(action, schema, destination, configuration, &target)?;
+    let command = make_xcodebuild_command(
+        action,
+        schema,
+        destination,
+        configuration,
+        &target,
+        sdk,
+        archive_path,
+    )?;
     let output = Command::new("zsh")
         .arg("-c")
         .arg(command)
@@ -29,11 +39,12 @@ fn make_xcodebuild_command(
     destination: &String,
     configuration: &Configuration,
     target: &BuildTarget,
+    sdk: Option<&SDK>,
+    archive_path: Option<&String>,
 ) -> anyhow::Result<String> {
     let project_or_workspace_argument = target.project_or_workspace_argument()?;
     let configuration_string = configuration.command_string();
-
-    let command = format!(
+    let mut command = format!(
         "xcodebuild {} {} -scheme {} -destination '{}' -configuration {}",
         action.command_string(),
         project_or_workspace_argument,
@@ -41,13 +52,21 @@ fn make_xcodebuild_command(
         destination,
         configuration_string
     );
+    if let Some(archive_path) = archive_path {
+        command += &format!(" -archivePath {}", archive_path);
+    }
+    if let Some(sdk) = sdk {
+        command += &format!(" -sdk {}", sdk.command_string());
+    }
 
     Ok(command)
 }
 
+#[derive(Debug, PartialEq)]
 pub enum XcodebuildCommandAction {
     Build,
     Test,
+    Archive,
 }
 
 impl XcodebuildCommandAction {
@@ -55,6 +74,7 @@ impl XcodebuildCommandAction {
         match self {
             XcodebuildCommandAction::Build => String::from("build"),
             XcodebuildCommandAction::Test => String::from("test"),
+            XcodebuildCommandAction::Archive => String::from("archive"),
         }
     }
 }
@@ -91,15 +111,15 @@ impl std::fmt::Display for Configuration {
 
 #[derive(ValueEnum, Clone, Debug)]
 pub enum SDK {
-    IPhoneOS,
-    MacOSX,
+    Iphoneos,
+    Macosx,
 }
 
 impl SDK {
     pub fn command_string(&self) -> String {
         match self {
-            SDK::IPhoneOS => String::from("iphoneos"),
-            SDK::MacOSX => String::from("macosx"),
+            SDK::Iphoneos => String::from("iphoneos"),
+            SDK::Macosx => String::from("macosx"),
         }
     }
 }
@@ -107,8 +127,8 @@ impl SDK {
 impl std::fmt::Display for SDK {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SDK::IPhoneOS => write!(f, "iphoneos"),
-            SDK::MacOSX => write!(f, "macosx"),
+            SDK::Iphoneos => write!(f, "iphoneos"),
+            SDK::Macosx => write!(f, "macosx"),
         }
     }
 }
@@ -212,12 +232,180 @@ mod tests {
             &"iOS Simulator,name=iPhone 15 Pro".to_string(),
             &Configuration::Debug,
             &target,
+            None,
+            None,
         )
         .unwrap();
 
         assert_eq!(
             command,
             "xcodebuild build -project TestProject.xcodeproj -scheme TestScheme -destination 'iOS Simulator,name=iPhone 15 Pro' -configuration Debug"
+        );
+    }
+
+    #[test]
+    fn test_xcodebuild_command_action_strings() {
+        assert_eq!(XcodebuildCommandAction::Build.command_string(), "build");
+        assert_eq!(XcodebuildCommandAction::Test.command_string(), "test");
+        assert_eq!(XcodebuildCommandAction::Archive.command_string(), "archive");
+    }
+
+    #[test]
+    fn test_sdk_command_string() {
+        assert_eq!(SDK::Iphoneos.command_string(), "iphoneos");
+        assert_eq!(SDK::Macosx.command_string(), "macosx");
+    }
+
+    #[test]
+    fn test_sdk_display() {
+        assert_eq!(SDK::Iphoneos.to_string(), "iphoneos");
+        assert_eq!(SDK::Macosx.to_string(), "macosx");
+    }
+
+    #[test]
+    fn test_configuration_default() {
+        let default_config: Configuration = Default::default();
+        assert_eq!(default_config.command_string(), "Debug");
+        assert_eq!(default_config.to_string(), "debug");
+    }
+
+    #[test]
+    fn test_test_command() {
+        let target = BuildTarget::new(Some(&"TestProject.xcodeproj".to_string()), None);
+        let command = make_xcodebuild_command(
+            &XcodebuildCommandAction::Test,
+            &"TestScheme".to_string(),
+            &"iOS Simulator,name=iPhone 15 Pro".to_string(),
+            &Configuration::Release,
+            &target,
+            None,
+            None,
+        )
+        .unwrap();
+
+        assert_eq!(
+            command,
+            "xcodebuild test -project TestProject.xcodeproj -scheme TestScheme -destination 'iOS Simulator,name=iPhone 15 Pro' -configuration Release"
+        );
+    }
+
+    #[test]
+    fn test_archive_command() {
+        let target = BuildTarget::new(Some(&"TestProject.xcodeproj".to_string()), None);
+        let command = make_xcodebuild_command(
+            &XcodebuildCommandAction::Archive,
+            &"TestScheme".to_string(),
+            &"iOS Simulator,name=iPhone 15 Pro".to_string(),
+            &Configuration::Release,
+            &target,
+            None,
+            Some(&"/path/to/archive.xcarchive".to_string()),
+        )
+        .unwrap();
+
+        assert_eq!(
+            command,
+            "xcodebuild archive -project TestProject.xcodeproj -scheme TestScheme -destination 'iOS Simulator,name=iPhone 15 Pro' -configuration Release -archivePath /path/to/archive.xcarchive"
+        );
+    }
+
+    #[test]
+    fn test_command_with_sdk() {
+        let target = BuildTarget::new(Some(&"TestProject.xcodeproj".to_string()), None);
+        let command = make_xcodebuild_command(
+            &XcodebuildCommandAction::Build,
+            &"TestScheme".to_string(),
+            &"iOS Simulator,name=iPhone 15 Pro".to_string(),
+            &Configuration::Debug,
+            &target,
+            Some(&SDK::Iphoneos),
+            None,
+        )
+        .unwrap();
+
+        assert_eq!(
+            command,
+            "xcodebuild build -project TestProject.xcodeproj -scheme TestScheme -destination 'iOS Simulator,name=iPhone 15 Pro' -configuration Debug -sdk iphoneos"
+        );
+    }
+
+    #[test]
+    fn test_command_with_workspace() {
+        let target = BuildTarget::new(None, Some(&"TestWorkspace.xcworkspace".to_string()));
+        let command = make_xcodebuild_command(
+            &XcodebuildCommandAction::Build,
+            &"TestScheme".to_string(),
+            &"iOS Simulator,name=iPhone 15 Pro".to_string(),
+            &Configuration::Debug,
+            &target,
+            None,
+            None,
+        )
+        .unwrap();
+
+        assert_eq!(
+            command,
+            "xcodebuild build -workspace TestWorkspace.xcworkspace -scheme TestScheme -destination 'iOS Simulator,name=iPhone 15 Pro' -configuration Debug"
+        );
+    }
+
+    #[test]
+    fn test_command_with_all_options() {
+        let target = BuildTarget::new(None, Some(&"TestWorkspace.xcworkspace".to_string()));
+        let command = make_xcodebuild_command(
+            &XcodebuildCommandAction::Archive,
+            &"TestScheme".to_string(),
+            &"Generic/iOS".to_string(),
+            &Configuration::Release,
+            &target,
+            Some(&SDK::Macosx),
+            Some(&"/tmp/MyApp.xcarchive".to_string()),
+        )
+        .unwrap();
+
+        assert_eq!(
+            command,
+            "xcodebuild archive -workspace TestWorkspace.xcworkspace -scheme TestScheme -destination 'Generic/iOS' -configuration Release -archivePath /tmp/MyApp.xcarchive -sdk macosx"
+        );
+    }
+
+    #[test]
+    fn test_command_error_with_invalid_target() {
+        let target = BuildTarget::new(None, None);
+        let result = make_xcodebuild_command(
+            &XcodebuildCommandAction::Build,
+            &"TestScheme".to_string(),
+            &"iOS Simulator,name=iPhone 15 Pro".to_string(),
+            &Configuration::Debug,
+            &target,
+            None,
+            None,
+        );
+
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Neither project nor workspace is specified")
+        );
+    }
+
+    #[test]
+    fn test_build_target_with_both_project_and_workspace() {
+        // Edge case: if both are provided, project takes precedence
+        let target = BuildTarget::new(
+            Some(&"TestProject.xcodeproj".to_string()),
+            Some(&"TestWorkspace.xcworkspace".to_string()),
+        );
+
+        assert_eq!(
+            target.project_or_workspace_string().unwrap(),
+            "TestProject.xcodeproj"
+        );
+        assert_eq!(
+            target.project_or_workspace_argument().unwrap(),
+            "-project TestProject.xcodeproj"
         );
     }
 }

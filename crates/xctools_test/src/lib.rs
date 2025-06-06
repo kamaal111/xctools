@@ -144,6 +144,8 @@ pub fn test(
         destination,
         configuration,
         &target,
+        None,
+        None,
     )?;
 
     Ok(output)
