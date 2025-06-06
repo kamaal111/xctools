@@ -1,5 +1,5 @@
 use anyhow::Result;
-use xcbuild_common::{BuildTarget, Configuration};
+use xcbuild_common::{BuildTarget, Configuration, XcodebuildCommandAction, run_xcodebuild_command};
 
 pub fn test(
     schema: &String,
@@ -9,7 +9,16 @@ pub fn test(
     workspace: &Option<String>,
 ) -> Result<String> {
     let target = BuildTarget::new(project.as_ref(), workspace.as_ref());
-    let project_or_workspace = target.project_or_workspace_string()?;
+    let output = run_xcodebuild_command(
+        &XcodebuildCommandAction::Test,
+        schema,
+        destination,
+        configuration,
+        &target,
+    )?;
 
-    Ok("".to_string())
+    Ok(output)
 }
+
+#[cfg(test)]
+mod tests {}

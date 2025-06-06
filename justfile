@@ -5,6 +5,7 @@ TEST_PROJECT := "crates/xctools_cli/TestXcodeApp/TestXcodeApp.xcodeproj"
 
 MACOS_DESTINATION := "platform=macOS"
 IOS_DESTINATION := "generic/platform=iOS"
+IPHONE_16_PRO_DESTINATION := "platform=iOS Simulator,name=iPhone 16 Pro"
 
 # List available commands
 default:
@@ -73,6 +74,14 @@ dev-build-ios-cmd:
 # Run dev command to bump version
 dev-bump-version-cmd:
     {{ CARGO }} run -- bump-version --version-number 1.0.1 --build-number 2
+
+# Run dev command to test for macOS
+dev-test-mac-cmd:
+    {{ CARGO }} run -- test --schema "{{ TEST_SCHEMA }}" --destination "{{ MACOS_DESTINATION }}" --project "{{ TEST_PROJECT }}" --configuration debug
+
+# Run dev command to test for iOS
+dev-test-ios-cmd:
+    {{ CARGO }} run -- test --schema "{{ TEST_SCHEMA }}" --destination "{{ IPHONE_16_PRO_DESTINATION }}" --project "{{ TEST_PROJECT }}" --configuration debug
 
 # Run help command
 help:

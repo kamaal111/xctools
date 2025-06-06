@@ -1,7 +1,4 @@
-use std::process::Command;
-
-use anyhow::Context;
-use xcbuild_common::{BuildTarget, Configuration};
+use xcbuild_common::{BuildTarget, Configuration, XcodebuildCommandAction, run_xcodebuild_command};
 
 /// Builds an Xcode project or workspace using the `xcodebuild` command-line tool.
 ///
@@ -44,7 +41,7 @@ use xcbuild_common::{BuildTarget, Configuration};
 /// );
 /// assert!(result.is_err());
 /// let error_msg = result.unwrap_err().to_string();
-/// assert!(error_msg.contains("Failed to determine project or workspace"));
+/// assert!(error_msg.contains("Neither project nor workspace is specified"));
 /// ```
 ///
 /// ## Testing Configuration enum usage:
@@ -110,7 +107,7 @@ use xcbuild_common::{BuildTarget, Configuration};
 ///
 /// The function generates an xcodebuild command in the format:
 /// ```bash
-/// xcodebuild -project MyApp.xcodeproj -scheme MyApp -destination 'iOS Simulator,name=iPhone 15 Pro' -configuration Debug build
+/// xcodebuild build -project MyApp.xcodeproj -scheme MyApp -destination 'iOS Simulator,name=iPhone 15 Pro' -configuration Debug
 /// ```
 ///
 /// # Requirements
@@ -127,112 +124,16 @@ pub fn build(
     workspace: &Option<String>,
 ) -> anyhow::Result<String> {
     let target = BuildTarget::new(project.as_ref(), workspace.as_ref());
-    let project_or_workspace = match target.project_or_workspace_string() {
-        Ok(project_or_workspace) => project_or_workspace,
-        Err(_) => anyhow::bail!("Failed to determine project or workspace"),
-    };
-    let command = match build_command(schema, destination, configuration, &target) {
-        Ok(command) => command,
-        Err(_) => anyhow::bail!("Failed to build command"),
-    };
-    let output = match Command::new("zsh")
-        .arg("-c")
-        .arg(command)
-        .spawn()
-        .context(format!("Failed to build {}", project_or_workspace))?
-        .wait_with_output()
-        .context(format!("Failed to build {}", project_or_workspace))
-    {
-        Err(error) => return Err(error),
-        Ok(output) => output,
-    };
+    let output = run_xcodebuild_command(
+        &XcodebuildCommandAction::Build,
+        schema,
+        destination,
+        configuration,
+        &target,
+    )?;
 
-    String::from_utf8(output.stdout).context("Failed to decode output")
-}
-
-fn build_command(
-    schema: &String,
-    destination: &String,
-    configuration: &Configuration,
-    target: &BuildTarget,
-) -> anyhow::Result<String> {
-    let project_or_workspace_argument = target.project_or_workspace_argument()?;
-    let configuration_string = configuration.command_string();
-
-    let command = format!(
-        "xcodebuild {} -scheme {} -destination '{}' -configuration {} build",
-        project_or_workspace_argument, schema, destination, configuration_string
-    );
-
-    Ok(command)
+    Ok(output)
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_build_target_with_project() {
-        let target = BuildTarget::new(Some(&"TestProject.xcodeproj".to_string()), None);
-
-        assert_eq!(
-            target.project_or_workspace_string().unwrap(),
-            "TestProject.xcodeproj"
-        );
-        assert_eq!(
-            target.project_or_workspace_argument().unwrap(),
-            "-project TestProject.xcodeproj"
-        );
-    }
-
-    #[test]
-    fn test_build_target_with_workspace() {
-        let target = BuildTarget::new(None, Some(&"TestWorkspace.xcworkspace".to_string()));
-
-        assert_eq!(
-            target.project_or_workspace_string().unwrap(),
-            "TestWorkspace.xcworkspace"
-        );
-        assert_eq!(
-            target.project_or_workspace_argument().unwrap(),
-            "-workspace TestWorkspace.xcworkspace"
-        );
-    }
-
-    #[test]
-    fn test_build_target_with_neither() {
-        let target = BuildTarget::new(None, None);
-
-        assert!(target.project_or_workspace_string().is_err());
-        assert!(target.project_or_workspace_argument().is_err());
-    }
-
-    #[test]
-    fn test_configuration_command_string() {
-        assert_eq!(Configuration::Debug.command_string(), "Debug");
-        assert_eq!(Configuration::Release.command_string(), "Release");
-    }
-
-    #[test]
-    fn test_configuration_display() {
-        assert_eq!(Configuration::Debug.to_string(), "debug");
-        assert_eq!(Configuration::Release.to_string(), "release");
-    }
-
-    #[test]
-    fn test_build_command() {
-        let target = BuildTarget::new(Some(&"TestProject.xcodeproj".to_string()), None);
-        let command = build_command(
-            &"TestScheme".to_string(),
-            &"iOS Simulator,name=iPhone 15 Pro".to_string(),
-            &Configuration::Debug,
-            &target,
-        )
-        .unwrap();
-
-        assert_eq!(
-            command,
-            "xcodebuild -project TestProject.xcodeproj -scheme TestScheme -destination 'iOS Simulator,name=iPhone 15 Pro' -configuration Debug build"
-        );
-    }
-}
+mod tests {}
