@@ -5,6 +5,7 @@ members = [
     "crates/xctools_bump_version",
     "crates/xctools_cli",
     "crates/xctools_test",
+    "crates/xctools_archive",
     "crates/xcbuild_common",
 ]
 resolver = "2"

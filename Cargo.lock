@@ -584,6 +584,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "xctools_archive"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "xcbuild_common",
+]
+
+[[package]]
 name = "xctools_build"
 version = "0.1.0"
 dependencies = [
@@ -619,6 +627,7 @@ dependencies = [
  "tempfile",
  "xcbuild_common",
  "xctools_acknowledgements",
+ "xctools_archive",
  "xctools_build",
  "xctools_bump_version",
  "xctools_test",

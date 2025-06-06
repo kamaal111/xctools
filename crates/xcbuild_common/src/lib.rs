@@ -31,6 +31,30 @@ impl std::fmt::Display for Configuration {
     }
 }
 
+#[derive(ValueEnum, Clone, Debug)]
+pub enum SDK {
+    IPhoneOS,
+    MacOSX,
+}
+
+impl SDK {
+    pub fn command_string(&self) -> String {
+        match self {
+            SDK::IPhoneOS => String::from("iphoneos"),
+            SDK::MacOSX => String::from("macosx"),
+        }
+    }
+}
+
+impl std::fmt::Display for SDK {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SDK::IPhoneOS => write!(f, "iphoneos"),
+            SDK::MacOSX => write!(f, "macosx"),
+        }
+    }
+}
+
 pub struct BuildTarget {
     project: Option<String>,
     workspace: Option<String>,
