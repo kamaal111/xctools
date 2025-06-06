@@ -769,3 +769,447 @@ fn test_acknowledgements_command_short_flags() {
     assert!(!stderr.contains("invalid value"));
     assert!(!stderr.contains("unexpected argument"));
 }
+
+// Archive command integration tests
+#[test]
+fn test_archive_command_help() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&["archive", "--help"]);
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Archive Xcode project"))
+        .stdout(predicate::str::contains("--schema"))
+        .stdout(predicate::str::contains("--destination"))
+        .stdout(predicate::str::contains("--sdk"))
+        .stdout(predicate::str::contains("--output"))
+        .stdout(predicate::str::contains("--project"))
+        .stdout(predicate::str::contains("--workspace"));
+}
+
+#[test]
+fn test_archive_command_missing_required_args() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.arg("archive");
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("required"));
+}
+
+#[test]
+fn test_archive_command_missing_schema() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "archive",
+        "--destination",
+        "generic/platform=iOS",
+        "--sdk",
+        "iphoneos",
+        "--output",
+        "MyApp.xcarchive",
+        "--project",
+        "TestXcodeApp/TestXcodeApp.xcodeproj",
+    ]);
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("required"))
+        .stderr(predicate::str::contains("schema"));
+}
+
+#[test]
+fn test_archive_command_missing_destination() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "archive",
+        "--schema",
+        "TestXcodeApp",
+        "--sdk",
+        "iphoneos",
+        "--output",
+        "MyApp.xcarchive",
+        "--project",
+        "TestXcodeApp/TestXcodeApp.xcodeproj",
+    ]);
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("required"))
+        .stderr(predicate::str::contains("destination"));
+}
+
+#[test]
+fn test_archive_command_missing_sdk() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "archive",
+        "--schema",
+        "TestXcodeApp",
+        "--destination",
+        "generic/platform=iOS",
+        "--output",
+        "MyApp.xcarchive",
+        "--project",
+        "TestXcodeApp/TestXcodeApp.xcodeproj",
+    ]);
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("required"))
+        .stderr(predicate::str::contains("sdk"));
+}
+
+#[test]
+fn test_archive_command_missing_output() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "archive",
+        "--schema",
+        "TestXcodeApp",
+        "--destination",
+        "generic/platform=iOS",
+        "--sdk",
+        "iphoneos",
+        "--project",
+        "TestXcodeApp/TestXcodeApp.xcodeproj",
+    ]);
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("required"))
+        .stderr(predicate::str::contains("output"));
+}
+
+#[test]
+fn test_archive_command_missing_project_or_workspace() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "archive",
+        "--schema",
+        "TestXcodeApp",
+        "--destination",
+        "generic/platform=iOS",
+        "--sdk",
+        "iphoneos",
+        "--output",
+        "MyApp.xcarchive",
+    ]);
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("required"));
+}
+
+#[test]
+fn test_archive_command_with_both_project_and_workspace() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "archive",
+        "--schema",
+        "TestXcodeApp",
+        "--destination",
+        "generic/platform=iOS",
+        "--sdk",
+        "iphoneos",
+        "--output",
+        "MyApp.xcarchive",
+        "--project",
+        "TestXcodeApp/TestXcodeApp.xcodeproj",
+        "--workspace",
+        "TestXcodeApp/TestXcodeApp.xcworkspace",
+    ]);
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("cannot be used with"));
+}
+
+#[test]
+fn test_archive_command_invalid_sdk() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "archive",
+        "--schema",
+        "TestXcodeApp",
+        "--destination",
+        "generic/platform=iOS",
+        "--sdk",
+        "invalid",
+        "--output",
+        "MyApp.xcarchive",
+        "--project",
+        "TestXcodeApp/TestXcodeApp.xcodeproj",
+    ]);
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("invalid value 'invalid'"));
+}
+
+#[test]
+fn test_archive_command_invalid_configuration() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "archive",
+        "--schema",
+        "TestXcodeApp",
+        "--destination",
+        "generic/platform=iOS",
+        "--sdk",
+        "iphoneos",
+        "--output",
+        "MyApp.xcarchive",
+        "--project",
+        "TestXcodeApp/TestXcodeApp.xcodeproj",
+        "--configuration",
+        "invalid",
+    ]);
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("invalid value 'invalid'"));
+}
+
+#[test]
+fn test_archive_command_valid_iphoneos_sdk() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "archive",
+        "--schema",
+        "TestXcodeApp",
+        "--destination",
+        "generic/platform=iOS",
+        "--sdk",
+        "iphoneos",
+        "--output",
+        "MyApp.xcarchive",
+        "--project",
+        "TestXcodeApp/TestXcodeApp.xcodeproj",
+        "--configuration",
+        "debug",
+    ]);
+
+    let output = cmd.output().unwrap();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Ensure we don't get CLI argument parsing errors
+    assert!(!stderr.contains("error: the following required arguments were not provided"));
+    assert!(!stderr.contains("invalid value"));
+    assert!(!stderr.contains("cannot be used with"));
+}
+
+#[test]
+fn test_archive_command_valid_macosx_sdk() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "archive",
+        "--schema",
+        "TestXcodeApp",
+        "--destination",
+        "generic/platform=macOS",
+        "--sdk",
+        "macosx",
+        "--output",
+        "MyApp.xcarchive",
+        "--project",
+        "TestXcodeApp/TestXcodeApp.xcodeproj",
+        "--configuration",
+        "release",
+    ]);
+
+    let output = cmd.output().unwrap();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Ensure we don't get CLI argument parsing errors
+    assert!(!stderr.contains("error: the following required arguments were not provided"));
+    assert!(!stderr.contains("invalid value"));
+    assert!(!stderr.contains("cannot be used with"));
+}
+
+#[test]
+fn test_archive_command_with_workspace() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "archive",
+        "--schema",
+        "TestXcodeApp",
+        "--destination",
+        "generic/platform=iOS",
+        "--sdk",
+        "iphoneos",
+        "--output",
+        "MyApp.xcarchive",
+        "--workspace",
+        "TestXcodeApp/TestXcodeApp.xcworkspace",
+        "--configuration",
+        "release",
+    ]);
+
+    let output = cmd.output().unwrap();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Ensure we don't get CLI argument parsing errors
+    assert!(!stderr.contains("error: the following required arguments were not provided"));
+    assert!(!stderr.contains("invalid value"));
+    assert!(!stderr.contains("cannot be used with"));
+}
+
+#[test]
+fn test_archive_command_debug_configuration() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "archive",
+        "--schema",
+        "TestXcodeApp",
+        "--destination",
+        "generic/platform=iOS",
+        "--sdk",
+        "iphoneos",
+        "--output",
+        "MyApp-Debug.xcarchive",
+        "--project",
+        "TestXcodeApp/TestXcodeApp.xcodeproj",
+        "--configuration",
+        "debug",
+    ]);
+
+    let output = cmd.output().unwrap();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Ensure we don't get CLI argument parsing errors
+    assert!(!stderr.contains("error: the following required arguments were not provided"));
+    assert!(!stderr.contains("invalid value"));
+    assert!(!stderr.contains("cannot be used with"));
+}
+
+#[test]
+fn test_archive_command_release_configuration() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "archive",
+        "--schema",
+        "TestXcodeApp",
+        "--destination",
+        "generic/platform=iOS",
+        "--sdk",
+        "iphoneos",
+        "--output",
+        "MyApp-Release.xcarchive",
+        "--project",
+        "TestXcodeApp/TestXcodeApp.xcodeproj",
+        "--configuration",
+        "release",
+    ]);
+
+    let output = cmd.output().unwrap();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Ensure we don't get CLI argument parsing errors
+    assert!(!stderr.contains("error: the following required arguments were not provided"));
+    assert!(!stderr.contains("invalid value"));
+    assert!(!stderr.contains("cannot be used with"));
+}
+
+#[test]
+fn test_archive_command_custom_output_path() {
+    let tmp = tempdir().unwrap();
+    let archive_path = tmp.path().join("build/archives/MyApp-v1.0.xcarchive");
+
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "archive",
+        "--schema",
+        "TestXcodeApp",
+        "--destination",
+        "generic/platform=iOS",
+        "--sdk",
+        "iphoneos",
+        "--output",
+        archive_path.to_str().unwrap(),
+        "--project",
+        "TestXcodeApp/TestXcodeApp.xcodeproj",
+        "--configuration",
+        "release",
+    ]);
+
+    let output = cmd.output().unwrap();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Ensure we don't get CLI argument parsing errors
+    assert!(!stderr.contains("error: the following required arguments were not provided"));
+    assert!(!stderr.contains("invalid value"));
+    assert!(!stderr.contains("cannot be used with"));
+}
+
+#[test]
+fn test_archive_command_ios_generic_destination() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "archive",
+        "--schema",
+        "TestXcodeApp",
+        "--destination",
+        "generic/platform=iOS",
+        "--sdk",
+        "iphoneos",
+        "--output",
+        "MyApp.xcarchive",
+        "--project",
+        "TestXcodeApp/TestXcodeApp.xcodeproj",
+    ]);
+
+    let output = cmd.output().unwrap();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Ensure we don't get CLI argument parsing errors
+    assert!(!stderr.contains("error: the following required arguments were not provided"));
+    assert!(!stderr.contains("invalid value"));
+    assert!(!stderr.contains("cannot be used with"));
+}
+
+#[test]
+fn test_archive_command_macos_generic_destination() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "archive",
+        "--schema",
+        "TestXcodeApp",
+        "--destination",
+        "generic/platform=macOS",
+        "--sdk",
+        "macosx",
+        "--output",
+        "MyApp.xcarchive",
+        "--project",
+        "TestXcodeApp/TestXcodeApp.xcodeproj",
+    ]);
+
+    let output = cmd.output().unwrap();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Ensure we don't get CLI argument parsing errors
+    assert!(!stderr.contains("error: the following required arguments were not provided"));
+    assert!(!stderr.contains("invalid value"));
+    assert!(!stderr.contains("cannot be used with"));
+}
+
+#[test]
+fn test_archive_command_argument_parsing_comprehensive() {
+    // Test that all valid archive arguments are parsed correctly without running xcodebuild
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "archive",
+        "--schema",
+        "MyTestScheme",
+        "--destination",
+        "generic/platform=iOS",
+        "--sdk",
+        "iphoneos",
+        "--output",
+        "/tmp/MyApp-v2.0.xcarchive",
+        "--project",
+        "TestXcodeApp/TestXcodeApp.xcodeproj",
+        "--configuration",
+        "release",
+    ]);
+
+    let output = cmd.output().unwrap();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Ensure we don't get CLI argument parsing errors
+    assert!(!stderr.contains("error: the following required arguments were not provided"));
+    assert!(!stderr.contains("invalid value"));
+    assert!(!stderr.contains("cannot be used with"));
+    assert!(!stderr.contains("unexpected argument"));
+}

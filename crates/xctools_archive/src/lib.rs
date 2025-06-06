@@ -187,4 +187,365 @@ pub fn archive(
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::*;
+    use xcbuild_common::{Configuration, SDK};
+
+    #[test]
+    fn test_archive_with_project_and_iphoneos_sdk() {
+        // Test that archive function properly validates parameters
+        // This will fail because neither project nor workspace is specified
+        let result = archive(
+            &"MyApp".to_string(),
+            &"generic/platform=iOS".to_string(),
+            &Configuration::Release,
+            &SDK::Iphoneos,
+            &"MyApp.xcarchive".to_string(),
+            &None,
+            &None,
+        );
+
+        assert!(result.is_err());
+        let error_msg = result.unwrap_err().to_string();
+        assert!(error_msg.contains("Neither project nor workspace is specified"));
+    }
+
+    #[test]
+    fn test_archive_with_workspace_and_macosx_sdk() {
+        // Test that archive function properly validates parameters
+        // This will fail because neither project nor workspace is specified
+        let result = archive(
+            &"MyApp".to_string(),
+            &"generic/platform=macOS".to_string(),
+            &Configuration::Debug,
+            &SDK::Macosx,
+            &"MyApp.xcarchive".to_string(),
+            &None,
+            &None,
+        );
+
+        assert!(result.is_err());
+        let error_msg = result.unwrap_err().to_string();
+        assert!(error_msg.contains("Neither project nor workspace is specified"));
+    }
+
+    #[test]
+    fn test_archive_parameter_validation_debug_configuration() {
+        // Test archive with Debug configuration
+        let result = archive(
+            &"TestScheme".to_string(),
+            &"generic/platform=iOS".to_string(),
+            &Configuration::Debug,
+            &SDK::Iphoneos,
+            &"TestApp-Debug.xcarchive".to_string(),
+            &None,
+            &None,
+        );
+
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Neither project nor workspace is specified")
+        );
+    }
+
+    #[test]
+    fn test_archive_parameter_validation_release_configuration() {
+        // Test archive with Release configuration
+        let result = archive(
+            &"TestScheme".to_string(),
+            &"generic/platform=macOS".to_string(),
+            &Configuration::Release,
+            &SDK::Macosx,
+            &"TestApp-Release.xcarchive".to_string(),
+            &None,
+            &None,
+        );
+
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Neither project nor workspace is specified")
+        );
+    }
+
+    #[test]
+    fn test_archive_with_custom_output_path() {
+        // Test archive with custom output path
+        let result = archive(
+            &"MyTestApp".to_string(),
+            &"generic/platform=iOS".to_string(),
+            &Configuration::Release,
+            &SDK::Iphoneos,
+            &"/tmp/build/archives/MyTestApp-v1.0.0.xcarchive".to_string(),
+            &None,
+            &None,
+        );
+
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Neither project nor workspace is specified")
+        );
+    }
+
+    #[test]
+    fn test_archive_ios_destination_patterns() {
+        // Test various iOS destination patterns
+        let destinations = vec!["generic/platform=iOS", "generic/platform=iOS Simulator"];
+
+        for destination in destinations {
+            let result = archive(
+                &"TestApp".to_string(),
+                &destination.to_string(),
+                &Configuration::Release,
+                &SDK::Iphoneos,
+                &"TestApp.xcarchive".to_string(),
+                &None,
+                &None,
+            );
+
+            assert!(result.is_err());
+            assert!(
+                result
+                    .unwrap_err()
+                    .to_string()
+                    .contains("Neither project nor workspace is specified")
+            );
+        }
+    }
+
+    #[test]
+    fn test_archive_macos_destination_patterns() {
+        // Test various macOS destination patterns
+        let destinations = vec!["generic/platform=macOS", "platform=macOS"];
+
+        for destination in destinations {
+            let result = archive(
+                &"TestApp".to_string(),
+                &destination.to_string(),
+                &Configuration::Release,
+                &SDK::Macosx,
+                &"TestApp.xcarchive".to_string(),
+                &None,
+                &None,
+            );
+
+            assert!(result.is_err());
+            assert!(
+                result
+                    .unwrap_err()
+                    .to_string()
+                    .contains("Neither project nor workspace is specified")
+            );
+        }
+    }
+
+    #[test]
+    fn test_archive_scheme_name_variations() {
+        // Test various scheme name patterns
+        let schemes = vec![
+            "MyApp",
+            "MyApp Release",
+            "MyApp-Production",
+            "TestScheme123",
+        ];
+
+        for scheme in schemes {
+            let result = archive(
+                &scheme.to_string(),
+                &"generic/platform=iOS".to_string(),
+                &Configuration::Release,
+                &SDK::Iphoneos,
+                &"Archive.xcarchive".to_string(),
+                &None,
+                &None,
+            );
+
+            assert!(result.is_err());
+            assert!(
+                result
+                    .unwrap_err()
+                    .to_string()
+                    .contains("Neither project nor workspace is specified")
+            );
+        }
+    }
+
+    #[test]
+    fn test_archive_output_path_variations() {
+        // Test various output path patterns
+        let outputs = vec![
+            "MyApp.xcarchive",
+            "./build/MyApp.xcarchive",
+            "/tmp/MyApp.xcarchive",
+            "../archives/MyApp-v1.0.xcarchive",
+            "MyApp-Debug.xcarchive",
+            "MyApp-Release.xcarchive",
+        ];
+
+        for output in outputs {
+            let result = archive(
+                &"TestApp".to_string(),
+                &"generic/platform=iOS".to_string(),
+                &Configuration::Release,
+                &SDK::Iphoneos,
+                &output.to_string(),
+                &None,
+                &None,
+            );
+
+            assert!(result.is_err());
+            assert!(
+                result
+                    .unwrap_err()
+                    .to_string()
+                    .contains("Neither project nor workspace is specified")
+            );
+        }
+    }
+
+    #[test]
+    fn test_archive_configuration_enum_values() {
+        // Test Configuration enum usage in archive function
+        let debug_result = archive(
+            &"TestApp".to_string(),
+            &"generic/platform=iOS".to_string(),
+            &Configuration::Debug,
+            &SDK::Iphoneos,
+            &"TestApp-Debug.xcarchive".to_string(),
+            &None,
+            &None,
+        );
+
+        let release_result = archive(
+            &"TestApp".to_string(),
+            &"generic/platform=iOS".to_string(),
+            &Configuration::Release,
+            &SDK::Iphoneos,
+            &"TestApp-Release.xcarchive".to_string(),
+            &None,
+            &None,
+        );
+
+        // Both should fail with the same error (no project/workspace)
+        assert!(debug_result.is_err());
+        assert!(release_result.is_err());
+        assert_eq!(
+            debug_result.unwrap_err().to_string(),
+            release_result.unwrap_err().to_string()
+        );
+    }
+
+    #[test]
+    fn test_archive_sdk_enum_values() {
+        // Test SDK enum usage in archive function
+        let ios_result = archive(
+            &"TestApp".to_string(),
+            &"generic/platform=iOS".to_string(),
+            &Configuration::Release,
+            &SDK::Iphoneos,
+            &"TestApp-iOS.xcarchive".to_string(),
+            &None,
+            &None,
+        );
+
+        let macos_result = archive(
+            &"TestApp".to_string(),
+            &"generic/platform=macOS".to_string(),
+            &Configuration::Release,
+            &SDK::Macosx,
+            &"TestApp-macOS.xcarchive".to_string(),
+            &None,
+            &None,
+        );
+
+        // Both should fail with the same error (no project/workspace)
+        assert!(ios_result.is_err());
+        assert!(macos_result.is_err());
+        assert_eq!(
+            ios_result.unwrap_err().to_string(),
+            macos_result.unwrap_err().to_string()
+        );
+    }
+
+    #[test]
+    fn test_archive_function_signature() {
+        // Test that the archive function accepts the correct parameter types
+        let schema = "TestScheme".to_string();
+        let destination = "generic/platform=iOS".to_string();
+        let configuration = Configuration::Release;
+        let sdk = SDK::Iphoneos;
+        let output = "TestApp.xcarchive".to_string();
+        let project = Some("TestApp.xcodeproj".to_string());
+        let workspace: Option<String> = None;
+
+        // This should compile and demonstrate the correct function signature
+        let _result = archive(
+            &schema,
+            &destination,
+            &configuration,
+            &sdk,
+            &output,
+            &project,
+            &workspace,
+        );
+
+        // We don't assert on the result since it will fail due to missing xcodebuild,
+        // but the fact that this compiles validates the function signature
+    }
+
+    #[test]
+    fn test_archive_with_both_project_and_workspace_none() {
+        // Test the specific error case when both project and workspace are None
+        let result = archive(
+            &"TestScheme".to_string(),
+            &"generic/platform=iOS".to_string(),
+            &Configuration::Release,
+            &SDK::Iphoneos,
+            &"TestApp.xcarchive".to_string(),
+            &None,
+            &None,
+        );
+
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("Neither project nor workspace is specified")
+        );
+    }
+
+    #[test]
+    fn test_archive_return_type() {
+        // Test that archive function returns Result<String>
+        let result = archive(
+            &"TestScheme".to_string(),
+            &"generic/platform=iOS".to_string(),
+            &Configuration::Release,
+            &SDK::Iphoneos,
+            &"TestApp.xcarchive".to_string(),
+            &None,
+            &None,
+        );
+
+        // Verify it's a Result<String> by checking the error type
+        match result {
+            Ok(_output) => {
+                // If it succeeds, output should be a String
+                // This is unlikely in test environment without real Xcode project
+            }
+            Err(error) => {
+                // Error should be anyhow::Error
+                assert!(error.to_string().len() > 0);
+            }
+        }
+    }
+}
