@@ -1,6 +1,6 @@
 use anyhow::Result;
 use xcbuild_common::{
-    BuildTarget, Configuration, SDK, XcodebuildCommandAction, run_xcodebuild_command,
+    BuildTarget, Configuration, SDK, XcodebuildCommandAction, XcodebuildParams, run_xcodebuild_command,
 };
 
 /// Creates an archive for an Xcode project or workspace using the `xcodebuild` command-line tool.
@@ -173,15 +173,16 @@ pub fn archive(
     workspace: &Option<String>,
 ) -> Result<String> {
     let target = BuildTarget::new(project.as_ref(), workspace.as_ref());
-    let output = run_xcodebuild_command(
-        &XcodebuildCommandAction::Archive,
-        schema,
-        destination,
-        configuration,
-        &target,
-        Some(sdk),
-        Some(output),
-    )?;
+    let params = XcodebuildParams::new(
+        XcodebuildCommandAction::Archive,
+        schema.clone(),
+        destination.clone(),
+        configuration.clone(),
+        target,
+    )
+    .with_sdk(sdk.clone())
+    .with_archive_path(output.clone());
+    let output = run_xcodebuild_command(&params)?;
 
     Ok(output)
 }

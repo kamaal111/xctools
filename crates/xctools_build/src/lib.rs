@@ -1,4 +1,6 @@
-use xcbuild_common::{BuildTarget, Configuration, XcodebuildCommandAction, run_xcodebuild_command};
+use xcbuild_common::{
+    BuildTarget, Configuration, XcodebuildCommandAction, XcodebuildParams, run_xcodebuild_command,
+};
 
 /// Builds an Xcode project or workspace using the `xcodebuild` command-line tool.
 ///
@@ -124,15 +126,14 @@ pub fn build(
     workspace: &Option<String>,
 ) -> anyhow::Result<String> {
     let target = BuildTarget::new(project.as_ref(), workspace.as_ref());
-    let output = run_xcodebuild_command(
-        &XcodebuildCommandAction::Build,
-        schema,
-        destination,
-        configuration,
-        &target,
-        None,
-        None,
-    )?;
+    let params = XcodebuildParams::new(
+        XcodebuildCommandAction::Build,
+        schema.clone(),
+        destination.clone(),
+        configuration.clone(),
+        target,
+    );
+    let output = run_xcodebuild_command(&params)?;
 
     Ok(output)
 }

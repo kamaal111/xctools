@@ -1,5 +1,5 @@
 use anyhow::Result;
-use xcbuild_common::{BuildTarget, Configuration, XcodebuildCommandAction, run_xcodebuild_command};
+use xcbuild_common::{BuildTarget, Configuration, XcodebuildCommandAction, XcodebuildParams, run_xcodebuild_command};
 
 /// Runs tests for an Xcode project or workspace using the `xcodebuild` command-line tool.
 ///
@@ -138,15 +138,14 @@ pub fn test(
     workspace: &Option<String>,
 ) -> Result<String> {
     let target = BuildTarget::new(project.as_ref(), workspace.as_ref());
-    let output = run_xcodebuild_command(
-        &XcodebuildCommandAction::Test,
-        schema,
-        destination,
-        configuration,
-        &target,
-        None,
-        None,
-    )?;
+    let params = XcodebuildParams::new(
+        XcodebuildCommandAction::Test,
+        schema.clone(),
+        destination.clone(),
+        configuration.clone(),
+        target,
+    );
+    let output = run_xcodebuild_command(&params)?;
 
     Ok(output)
 }
