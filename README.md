@@ -9,6 +9,7 @@ A command-line tool for Xcode project management, structured as a mini monorepo 
     - [Build Command](#build-command)
     - [Test Command](#test-command)
     - [Archive Command](#archive-command)
+    - [Upload Command](#upload-command)
     - [Bump Version Command](#bump-version-command)
     - [Acknowledgements Command](#acknowledgements-command)
   - [Development](#development)
@@ -24,6 +25,7 @@ XCTools provides utilities for working with Xcode projects:
 - **Build**: Execute xcodebuild commands with various configurations
 - **Test**: Run unit tests, UI tests, and integration tests for Xcode projects
 - **Archive**: Create .xcarchive bundles for distribution and App Store submission
+- **Upload**: Upload application packages to distribution platforms like App Store and TestFlight
 - **Bump Version**: Update project version numbers and build numbers
 - **Acknowledgements**: Generate acknowledgements files for Swift Package Manager dependencies and git contributors
 
@@ -87,6 +89,29 @@ xctools archive --schema MyApp --destination "generic/platform=iOS" --sdk iphone
 xctools archive --schema MyApp --destination "generic/platform=iOS" --sdk iphoneos --output MyApp-Debug.xcarchive --project MyApp.xcodeproj --configuration debug
 ```
 
+### Upload Command
+
+```bash
+# Upload iOS app to App Store/TestFlight
+xctools upload --target ios --app-file-path MyApp.ipa --username developer@example.com --password app-specific-password
+
+# Upload macOS app to App Store
+xctools upload --target macos --app-file-path MyMacApp.pkg --username developer@example.com --password app-specific-password
+
+# Upload with different file paths
+xctools upload --target ios --app-file-path ./build/MyApp.ipa --username developer@example.com --password app-specific-password
+
+# Upload enterprise distribution
+xctools upload --target ios --app-file-path MyApp-Enterprise.ipa --username enterprise@company.com --password enterprise-password
+```
+
+The upload command:
+- Uses `xcrun altool` to upload application packages to Apple's distribution platforms
+- Supports both iOS (.ipa) and macOS (.pkg, .dmg) applications
+- Handles authentication using Apple ID credentials
+- Provides detailed output from the upload process
+- Supports App Store, TestFlight, and enterprise distribution workflows
+
 ### Bump Version Command
 
 ```bash
@@ -137,6 +162,7 @@ xctools/
 │   ├── xctools_build/            # Build command library
 │   ├── xctools_test/             # Test command library
 │   ├── xctools_bump_version/     # Version bumping library
+│   ├── xctools_upload/           # Upload command library
 │   └── xctools_cli/              # Main CLI application
 └── MONOREPO.md                   # Detailed monorepo documentation
 ```
@@ -147,6 +173,7 @@ xctools/
 - **`xctools_build`**: Library for Xcode build operations
 - **`xctools_test`**: Library for running Xcode tests
 - **`xctools_bump_version`**: Library for version management
+- **`xctools_upload`**: Library for uploading applications to distribution platforms
 - **`xctools_cli`**: Main CLI application that combines the libraries
 
 See [MONOREPO.md](MONOREPO.md) for detailed information about the structure and benefits.

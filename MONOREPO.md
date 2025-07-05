@@ -32,6 +32,10 @@ xctools/
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       └── lib.rs
+│   ├── xctools_upload/          # Upload command library
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       └── lib.rs
 │   └── xctools_cli/             # Main CLI application
 │       ├── Cargo.toml
 │       ├── src/
@@ -89,6 +93,15 @@ Contains the version bumping functionality:
 - Support for updating both build numbers and marketing versions
 - Automatic discovery of project.pbxproj files in the workspace
 
+### `xctools_upload`
+
+Contains the application upload functionality:
+- `upload()` function for uploading application packages to distribution platforms
+- Uses `xcrun altool` to upload iOS (.ipa) and macOS (.pkg, .dmg) files
+- Supports App Store, TestFlight, and enterprise distribution workflows
+- Handles authentication using Apple ID credentials
+- Provides detailed output from the upload process
+
 ### `xctools_cli`
 
 The main command-line interface that:
@@ -110,6 +123,7 @@ cargo build -p xctools_archive
 cargo build -p xctools_build
 cargo build -p xctools_test
 cargo build -p xctools_bump_version
+cargo build -p xctools_upload
 ```
 
 ## Testing
@@ -126,6 +140,7 @@ cargo test -p xctools_archive
 cargo test -p xctools_build
 cargo test -p xctools_test
 cargo test -p xctools_bump_version
+cargo test -p xctools_upload
 ```
 
 ## Benefits of this Structure
@@ -155,4 +170,7 @@ xctools bump-version --build-number 42 --version-number 2.1.0
 
 # Generate acknowledgements
 xctools acknowledgements --app-name MyApp --output ./acknowledgements.json
+
+# Upload application to distribution platforms
+xctools upload --target ios --app-file-path MyApp.ipa --username developer@example.com --password app-specific-password
 ```

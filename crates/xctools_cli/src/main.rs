@@ -140,21 +140,21 @@ enum Commands {
     /// Upload archive to distribution platforms
     #[command()]
     Upload {
-        /// Path to the .xcarchive bundle to upload
-        #[arg(short, long)]
-        archive_path: String,
-
         /// Target choices are "ios" and "macos"
         #[arg(short, long)]
         target: UploadTarget,
 
-        /// Optional username for authentication
+        /// Path to the application file to upload
+        #[arg(short, long)]
+        app_file_path: String,
+
+        /// Username for authentication
         #[arg(short, long)]
         username: String,
 
-        /// Optional password for authentication
+        /// Password for authentication
         #[arg(short, long)]
-        password: Option<String>,
+        password: String,
     },
 }
 
@@ -198,11 +198,11 @@ fn main() {
             &workspace,
         ),
         Commands::Upload {
-            archive_path,
             target,
+            app_file_path,
             username,
             password,
-        } => upload(&archive_path, &target, &username, &password),
+        } => upload(&target, &app_file_path, &username, &password),
     };
     match output_result {
         Err(error) => {
