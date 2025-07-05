@@ -625,8 +625,16 @@ dependencies = [
  "xctools_archive",
  "xctools_build",
  "xctools_bump_version",
+ "xctools_export_archive",
  "xctools_test",
  "xctools_upload",
+]
+
+[[package]]
+name = "xctools_export_archive"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
 ]
 
 [[package]]

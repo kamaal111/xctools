@@ -4,6 +4,7 @@ use xctools_acknowledgements::acknowledgements;
 use xctools_archive::archive;
 use xctools_build::build;
 use xctools_bump_version::bump_version;
+use xctools_export_archive::export_archive;
 use xctools_test::test;
 use xctools_upload::upload;
 
@@ -156,6 +157,18 @@ enum Commands {
         #[arg(short, long)]
         password: String,
     },
+
+    /// Export archive to various formats
+    #[command()]
+    ExportArchive {
+        /// Path to the archive file to export
+        #[arg(short, long)]
+        archive_path: String,
+
+        /// Path to export options plist file
+        #[arg(short, long)]
+        export_options: String,
+    },
 }
 
 fn main() {
@@ -203,6 +216,10 @@ fn main() {
             username,
             password,
         } => upload(&target, &app_file_path, &username, &password),
+        Commands::ExportArchive {
+            archive_path,
+            export_options,
+        } => export_archive(&archive_path, &export_options),
     };
     match output_result {
         Err(error) => {
