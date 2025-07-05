@@ -6,6 +6,7 @@ members = [
     "crates/xctools_cli",
     "crates/xctools_test",
     "crates/xctools_archive",
+    "crates/xctools_upload",
     "crates/xcbuild_common",
 ]
 resolver = "2"

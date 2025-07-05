@@ -133,6 +133,30 @@ impl std::fmt::Display for SDK {
     }
 }
 
+#[derive(ValueEnum, Clone, Debug)]
+pub enum UploadTarget {
+    Ios,
+    Macos,
+}
+
+impl UploadTarget {
+    pub fn command_string(&self) -> String {
+        match self {
+            UploadTarget::Ios => String::from("ios"),
+            UploadTarget::Macos => String::from("macos"),
+        }
+    }
+}
+
+impl std::fmt::Display for UploadTarget {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UploadTarget::Ios => write!(f, "ios"),
+            UploadTarget::Macos => write!(f, "macos"),
+        }
+    }
+}
+
 pub struct BuildTarget {
     project: Option<String>,
     workspace: Option<String>,

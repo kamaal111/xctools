@@ -1,10 +1,11 @@
 use clap::{ArgGroup, Parser, Subcommand, builder::ValueParser};
-use xcbuild_common::{Configuration, SDK};
+use xcbuild_common::{Configuration, SDK, UploadTarget};
 use xctools_acknowledgements::acknowledgements;
 use xctools_archive::archive;
 use xctools_build::build;
 use xctools_bump_version::bump_version;
 use xctools_test::test;
+use xctools_upload::upload;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -135,6 +136,26 @@ enum Commands {
         #[arg(short, long)]
         workspace: Option<String>,
     },
+
+    /// Upload archive to distribution platforms
+    #[command()]
+    Upload {
+        /// Path to the .xcarchive bundle to upload
+        #[arg(short, long)]
+        archive_path: String,
+
+        /// Target choices are "ios" and "macos"
+        #[arg(short, long)]
+        target: UploadTarget,
+
+        /// Optional username for authentication
+        #[arg(short, long)]
+        username: String,
+
+        /// Optional password for authentication
+        #[arg(short, long)]
+        password: Option<String>,
+    },
 }
 
 fn main() {
@@ -176,6 +197,12 @@ fn main() {
             &project,
             &workspace,
         ),
+        Commands::Upload {
+            archive_path,
+            target,
+            username,
+            password,
+        } => upload(&archive_path, &target, &username, &password),
     };
     match output_result {
         Err(error) => {

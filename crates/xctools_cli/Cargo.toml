@@ -16,6 +16,7 @@ xctools_bump_version = { path = "../xctools_bump_version" }
 xctools_acknowledgements = { path = "../xctools_acknowledgements" }
 xctools_test = { path = "../xctools_test" }
 xctools_archive = { path = "../xctools_archive" }
+xctools_upload = { path = "../xctools_upload" }
 xcbuild_common = { path = "../xcbuild_common" }
 
 [dev-dependencies]
