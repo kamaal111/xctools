@@ -19,7 +19,7 @@ fn test_build_command_help() {
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("Build Xcode project"))
-        .stdout(predicate::str::contains("--schema"))
+        .stdout(predicate::str::contains("--scheme"))
         .stdout(predicate::str::contains("--destination"))
         .stdout(predicate::str::contains("--project"))
         .stdout(predicate::str::contains("--workspace"));
@@ -39,7 +39,7 @@ fn test_build_command_missing_project_or_workspace() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "build",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--destination",
         "iOS Simulator,name=iPhone 15 Pro",
@@ -54,7 +54,7 @@ fn test_build_command_with_both_project_and_workspace() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "build",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--destination",
         "iOS Simulator,name=iPhone 15 Pro",
@@ -73,7 +73,7 @@ fn test_build_command_invalid_configuration() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "build",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--destination",
         "iOS Simulator,name=iPhone 15 Pro",
@@ -94,7 +94,7 @@ fn test_build_command_argument_parsing() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "build",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--destination",
         "iOS Simulator,name=iPhone 15 Pro",
@@ -778,7 +778,7 @@ fn test_test_command_help() {
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("Test Xcode project"))
-        .stdout(predicate::str::contains("--schema"))
+        .stdout(predicate::str::contains("--scheme"))
         .stdout(predicate::str::contains("--destination"))
         .stdout(predicate::str::contains("--configuration"))
         .stdout(predicate::str::contains("--project"))
@@ -807,7 +807,7 @@ fn test_test_command_missing_schema() {
     cmd.assert()
         .failure()
         .stderr(predicate::str::contains("required"))
-        .stderr(predicate::str::contains("schema"));
+        .stderr(predicate::str::contains("scheme"));
 }
 
 #[test]
@@ -815,7 +815,7 @@ fn test_test_command_missing_destination() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "test",
-        "--schema",
+        "--scheme",
         "TestXcodeAppTests",
         "--project",
         "TestXcodeApp/TestXcodeApp.xcodeproj",
@@ -831,7 +831,7 @@ fn test_test_command_missing_project_or_workspace() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "test",
-        "--schema",
+        "--scheme",
         "TestXcodeAppTests",
         "--destination",
         "iOS Simulator,name=iPhone 15 Pro",
@@ -846,7 +846,7 @@ fn test_test_command_with_both_project_and_workspace() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "test",
-        "--schema",
+        "--scheme",
         "TestXcodeAppTests",
         "--destination",
         "iOS Simulator,name=iPhone 15 Pro",
@@ -865,7 +865,7 @@ fn test_test_command_invalid_configuration() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "test",
-        "--schema",
+        "--scheme",
         "TestXcodeAppTests",
         "--destination",
         "iOS Simulator,name=iPhone 15 Pro",
@@ -884,7 +884,7 @@ fn test_test_command_with_project() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "test",
-        "--schema",
+        "--scheme",
         "TestXcodeAppTests",
         "--destination",
         "iOS Simulator,name=iPhone 15 Pro",
@@ -908,7 +908,7 @@ fn test_test_command_with_workspace() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "test",
-        "--schema",
+        "--scheme",
         "TestXcodeAppUITests",
         "--destination",
         "iOS Simulator,name=iPhone 15 Pro",
@@ -932,7 +932,7 @@ fn test_test_command_debug_configuration() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "test",
-        "--schema",
+        "--scheme",
         "TestXcodeAppTests",
         "--destination",
         "iOS Simulator,name=iPhone 15 Pro",
@@ -956,7 +956,7 @@ fn test_test_command_release_configuration() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "test",
-        "--schema",
+        "--scheme",
         "TestXcodeAppTests",
         "--destination",
         "iOS Simulator,name=iPhone 15 Pro",
@@ -980,7 +980,7 @@ fn test_test_command_ios_simulator_destination() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "test",
-        "--schema",
+        "--scheme",
         "TestXcodeAppTests",
         "--destination",
         "iOS Simulator,name=iPhone 15 Pro",
@@ -1002,7 +1002,7 @@ fn test_test_command_ios_generic_destination() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "test",
-        "--schema",
+        "--scheme",
         "TestXcodeAppTests",
         "--destination",
         "generic/platform=iOS",
@@ -1024,7 +1024,7 @@ fn test_test_command_macos_destination() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "test",
-        "--schema",
+        "--scheme",
         "TestXcodeAppTests",
         "--destination",
         "platform=macOS",
@@ -1046,7 +1046,7 @@ fn test_test_command_ui_tests_scheme() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "test",
-        "--schema",
+        "--scheme",
         "TestXcodeAppUITests",
         "--destination",
         "iOS Simulator,name=iPhone 15 Pro",
@@ -1070,7 +1070,7 @@ fn test_test_command_unit_tests_scheme() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "test",
-        "--schema",
+        "--scheme",
         "TestXcodeAppTests",
         "--destination",
         "iOS Simulator,name=iPhone 15 Pro",
@@ -1094,7 +1094,7 @@ fn test_test_command_iphone_16_pro_destination() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "test",
-        "--schema",
+        "--scheme",
         "TestXcodeAppTests",
         "--destination",
         "platform=iOS Simulator,name=iPhone 16 Pro",
@@ -1117,7 +1117,7 @@ fn test_test_command_default_configuration() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "test",
-        "--schema",
+        "--scheme",
         "TestXcodeAppTests",
         "--destination",
         "iOS Simulator,name=iPhone 15 Pro",
@@ -1140,7 +1140,7 @@ fn test_test_command_argument_parsing_comprehensive() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "test",
-        "--schema",
+        "--scheme",
         "MyTestScheme",
         "--destination",
         "iOS Simulator,name=iPhone 15 Pro Max",
@@ -1218,7 +1218,7 @@ fn test_archive_command_help() {
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("Archive Xcode project"))
-        .stdout(predicate::str::contains("--schema"))
+        .stdout(predicate::str::contains("--scheme"))
         .stdout(predicate::str::contains("--destination"))
         .stdout(predicate::str::contains("--sdk"))
         .stdout(predicate::str::contains("--output"))
@@ -1252,7 +1252,7 @@ fn test_archive_command_missing_schema() {
     cmd.assert()
         .failure()
         .stderr(predicate::str::contains("required"))
-        .stderr(predicate::str::contains("schema"));
+        .stderr(predicate::str::contains("scheme"));
 }
 
 #[test]
@@ -1260,7 +1260,7 @@ fn test_archive_command_missing_destination() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "archive",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--sdk",
         "iphoneos",
@@ -1280,7 +1280,7 @@ fn test_archive_command_missing_sdk() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "archive",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--destination",
         "generic/platform=iOS",
@@ -1300,7 +1300,7 @@ fn test_archive_command_missing_output() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "archive",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--destination",
         "generic/platform=iOS",
@@ -1320,7 +1320,7 @@ fn test_archive_command_missing_project_or_workspace() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "archive",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--destination",
         "generic/platform=iOS",
@@ -1339,7 +1339,7 @@ fn test_archive_command_with_both_project_and_workspace() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "archive",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--destination",
         "generic/platform=iOS",
@@ -1362,7 +1362,7 @@ fn test_archive_command_invalid_sdk() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "archive",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--destination",
         "generic/platform=iOS",
@@ -1383,7 +1383,7 @@ fn test_archive_command_invalid_configuration() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "archive",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--destination",
         "generic/platform=iOS",
@@ -1406,7 +1406,7 @@ fn test_archive_command_valid_iphoneos_sdk() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "archive",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--destination",
         "generic/platform=iOS",
@@ -1434,7 +1434,7 @@ fn test_archive_command_valid_macosx_sdk() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "archive",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--destination",
         "generic/platform=macOS",
@@ -1462,7 +1462,7 @@ fn test_archive_command_with_workspace() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "archive",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--destination",
         "generic/platform=iOS",
@@ -1490,7 +1490,7 @@ fn test_archive_command_debug_configuration() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "archive",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--destination",
         "generic/platform=iOS",
@@ -1518,7 +1518,7 @@ fn test_archive_command_release_configuration() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "archive",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--destination",
         "generic/platform=iOS",
@@ -1549,7 +1549,7 @@ fn test_archive_command_custom_output_path() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "archive",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--destination",
         "generic/platform=iOS",
@@ -1577,7 +1577,7 @@ fn test_archive_command_ios_generic_destination() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "archive",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--destination",
         "generic/platform=iOS",
@@ -1603,7 +1603,7 @@ fn test_archive_command_macos_generic_destination() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "archive",
-        "--schema",
+        "--scheme",
         "TestXcodeApp",
         "--destination",
         "generic/platform=macOS",
@@ -1630,7 +1630,7 @@ fn test_archive_command_argument_parsing_comprehensive() {
     let mut cmd = Command::cargo_bin("xctools").unwrap();
     cmd.args(&[
         "archive",
-        "--schema",
+        "--scheme",
         "MyTestScheme",
         "--destination",
         "generic/platform=iOS",

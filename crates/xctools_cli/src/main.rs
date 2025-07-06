@@ -26,7 +26,7 @@ enum Commands {
     Build {
         /// The Xcode scheme to build.
         #[arg(short, long)]
-        schema: String,
+        scheme: String,
 
         /// The build destination (e.g., "iOS Simulator,name=iPhone 15 Pro").
         #[arg(short, long)]
@@ -54,7 +54,7 @@ enum Commands {
     Test {
         /// The Xcode scheme to build.
         #[arg(short, long)]
-        schema: String,
+        scheme: String,
 
         /// The build destination (e.g., "iOS Simulator,name=iPhone 15 Pro").
         #[arg(short, long)]
@@ -111,7 +111,7 @@ enum Commands {
     Archive {
         /// The Xcode scheme to build.
         #[arg(long)]
-        schema: String,
+        scheme: String,
 
         /// The build destination (e.g., "iOS Simulator,name=iPhone 15 Pro").
         #[arg(short, long)]
@@ -175,26 +175,26 @@ fn main() {
     let args = Args::parse();
     let output_result: anyhow::Result<String> = match args.command {
         Commands::Build {
-            schema,
+            scheme,
             destination,
             configuration,
             project,
             workspace,
-        } => build(&schema, &destination, &configuration, &project, &workspace),
+        } => build(&scheme, &destination, &configuration, &project, &workspace),
         Commands::BumpVersion {
             build_number,
             version_number,
         } => bump_version(&build_number, &version_number),
         Commands::Acknowledgements { app_name, output } => acknowledgements(&app_name, &output),
         Commands::Test {
-            schema,
+            scheme,
             destination,
             configuration,
             project,
             workspace,
-        } => test(&schema, &destination, &configuration, &project, &workspace),
+        } => test(&scheme, &destination, &configuration, &project, &workspace),
         Commands::Archive {
-            schema,
+            scheme,
             destination,
             configuration,
             sdk,
@@ -202,7 +202,7 @@ fn main() {
             project,
             workspace,
         } => archive(
-            &schema,
+            &scheme,
             &destination,
             &configuration,
             &sdk,

@@ -48,45 +48,45 @@ cargo build --release
 
 ```bash
 # Build with project file
-xctools build --schema MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj
+xctools build --scheme MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj
 
 # Build with workspace file  
-xctools build --schema MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --workspace MyApp.xcworkspace
+xctools build --scheme MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --workspace MyApp.xcworkspace
 
 # Build with specific configuration
-xctools build --schema MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj --configuration release
+xctools build --scheme MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj --configuration release
 ```
 
 ### Test Command
 
 ```bash
 # Run unit tests with project file
-xctools test --schema MyAppTests --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj
+xctools test --scheme MyAppTests --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj
 
 # Run UI tests with workspace file  
-xctools test --schema MyAppUITests --destination "iOS Simulator,name=iPhone 15 Pro" --workspace MyApp.xcworkspace
+xctools test --scheme MyAppUITests --destination "iOS Simulator,name=iPhone 15 Pro" --workspace MyApp.xcworkspace
 
 # Run tests with specific configuration
-xctools test --schema MyAppTests --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj --configuration release
+xctools test --scheme MyAppTests --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj --configuration release
 
 # Run tests for macOS
-xctools test --schema MyAppTests --destination "platform=macOS" --project MyApp.xcodeproj
+xctools test --scheme MyAppTests --destination "platform=macOS" --project MyApp.xcodeproj
 ```
 
 ### Archive Command
 
 ```bash
 # Create iOS archive with project file and Release configuration
-xctools archive --schema MyApp --destination "generic/platform=iOS" --sdk iphoneos --output MyApp.xcarchive --project MyApp.xcodeproj --configuration release
+xctools archive --scheme MyApp --destination "generic/platform=iOS" --sdk iphoneos --output MyApp.xcarchive --project MyApp.xcodeproj --configuration release
 
 # Create macOS archive with workspace file
-xctools archive --schema MyApp --destination "generic/platform=macOS" --sdk macosx --output MyApp.xcarchive --workspace MyApp.xcworkspace --configuration release
+xctools archive --scheme MyApp --destination "generic/platform=macOS" --sdk macosx --output MyApp.xcarchive --workspace MyApp.xcworkspace --configuration release
 
 # Create archive with custom output path
-xctools archive --schema MyApp --destination "generic/platform=iOS" --sdk iphoneos --output ./build/archives/MyApp-v1.0.xcarchive --project MyApp.xcodeproj
+xctools archive --scheme MyApp --destination "generic/platform=iOS" --sdk iphoneos --output ./build/archives/MyApp-v1.0.xcarchive --project MyApp.xcodeproj
 
 # Create Debug archive (for testing)
-xctools archive --schema MyApp --destination "generic/platform=iOS" --sdk iphoneos --output MyApp-Debug.xcarchive --project MyApp.xcodeproj --configuration debug
+xctools archive --scheme MyApp --destination "generic/platform=iOS" --sdk iphoneos --output MyApp-Debug.xcarchive --project MyApp.xcodeproj --configuration debug
 ```
 
 ### Upload Command

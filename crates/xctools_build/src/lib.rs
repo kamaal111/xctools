@@ -10,7 +10,7 @@ use xcbuild_common::{
 ///
 /// # Arguments
 ///
-/// * `schema` - The Xcode scheme name to build (e.g., "MyApp", "MyAppTests")
+/// * `scheme` - The Xcode scheme name to build (e.g., "MyApp", "MyAppTests")
 /// * `destination` - The build destination specifying the target device or simulator:
 ///   - iOS Simulator: "iOS Simulator,name=iPhone 15 Pro"
 ///   - Generic iOS: "generic/platform=iOS"
@@ -96,13 +96,13 @@ use xcbuild_common::{
 /// ## Using the xctools CLI:
 /// ```bash
 /// # Build with project file and Debug configuration (default)
-/// xctools build --schema MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj
+/// xctools build --scheme MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj
 ///
 /// # Build with workspace file and Release configuration
-/// xctools build --schema MyApp --destination "generic/platform=iOS" --workspace MyApp.xcworkspace --configuration release
+/// xctools build --scheme MyApp --destination "generic/platform=iOS" --workspace MyApp.xcworkspace --configuration release
 ///
 /// # Build for macOS
-/// xctools build --schema MyApp --destination "platform=macOS" --project MyApp.xcodeproj
+/// xctools build --scheme MyApp --destination "platform=macOS" --project MyApp.xcodeproj
 /// ```
 ///
 /// # Generated Command
@@ -119,20 +119,18 @@ use xcbuild_common::{
 /// - The specified scheme must exist in the project/workspace
 /// - The destination must be valid for the target platform
 pub fn build(
-    schema: &String,
+    scheme: &String,
     destination: &String,
     configuration: &Configuration,
     project: &Option<String>,
     workspace: &Option<String>,
 ) -> anyhow::Result<String> {
     let target = BuildTarget::new(project.as_ref(), workspace.as_ref());
-    let params = XcodebuildParams::new(
-        XcodebuildCommandAction::Build,
-        schema.clone(),
-        destination.clone(),
-        configuration.clone(),
-        target,
-    );
+    let params = XcodebuildParams::new(XcodebuildCommandAction::Build)
+        .with_scheme(scheme.clone())
+        .with_destination(destination.clone())
+        .with_configuration(configuration.clone())
+        .with_target(target);
     let output = run_xcodebuild_command(&params)?;
 
     Ok(output)

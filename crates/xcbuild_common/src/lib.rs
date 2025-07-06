@@ -7,31 +7,69 @@ use clap::ValueEnum;
 #[derive(Debug)]
 pub struct XcodebuildParams {
     pub action: XcodebuildCommandAction,
-    pub schema: String,
-    pub destination: String,
-    pub configuration: Configuration,
-    pub target: BuildTarget,
+    pub scheme: Option<String>,
+    pub destination: Option<String>,
+    pub configuration: Option<Configuration>,
+    pub target: Option<BuildTarget>,
     pub sdk: Option<SDK>,
     pub archive_path: Option<String>,
 }
 
 impl XcodebuildParams {
-    pub fn new(
-        action: XcodebuildCommandAction,
-        schema: String,
-        destination: String,
-        configuration: Configuration,
-        target: BuildTarget,
-    ) -> Self {
+    pub fn new(action: XcodebuildCommandAction) -> Self {
         Self {
             action,
-            schema,
-            destination,
-            configuration,
-            target,
+            scheme: None,
+            destination: None,
+            configuration: None,
+            target: None,
             sdk: None,
             archive_path: None,
         }
+    }
+
+    fn make_xcodebuild_command(&self) -> anyhow::Result<String> {
+        let mut command = format!("xcodebuild {}", self.action.command_string());
+        if let Some(target) = &self.target {
+            command += &format!(" {}", target.project_or_workspace_argument()?)
+        }
+        if let Some(scheme) = &self.scheme {
+            command += &format!(" -scheme {}", scheme);
+        }
+        if let Some(destination) = &self.destination {
+            command += &format!(" -destination '{}'", destination);
+        }
+        if let Some(configuration) = &self.configuration {
+            command += &format!(" -configuration {}", configuration.command_string());
+        }
+        if let Some(archive_path) = &self.archive_path {
+            command += &format!(" -archivePath {}", archive_path);
+        }
+        if let Some(sdk) = &self.sdk {
+            command += &format!(" -sdk {}", sdk.command_string());
+        }
+
+        Ok(command)
+    }
+
+    pub fn with_scheme(mut self, scheme: String) -> Self {
+        self.scheme = Some(scheme);
+        self
+    }
+
+    pub fn with_destination(mut self, destination: String) -> Self {
+        self.destination = Some(destination);
+        self
+    }
+
+    pub fn with_configuration(mut self, configuration: Configuration) -> Self {
+        self.configuration = Some(configuration);
+        self
+    }
+
+    pub fn with_target(mut self, target: BuildTarget) -> Self {
+        self.target = Some(target);
+        self
     }
 
     pub fn with_sdk(mut self, sdk: SDK) -> Self {
@@ -46,38 +84,16 @@ impl XcodebuildParams {
 }
 
 pub fn run_xcodebuild_command(params: &XcodebuildParams) -> Result<String> {
-    let project_or_workspace = params.target.project_or_workspace_string()?;
-    let command = make_xcodebuild_command(params)?;
+    let command = params.make_xcodebuild_command()?;
     let output = Command::new("zsh")
         .arg("-c")
         .arg(command)
         .spawn()
-        .context(format!("Failed to run {}", project_or_workspace))?
+        .context(format!("Failed to run {}", params.action.command_string()))?
         .wait_with_output()
-        .context(format!("Failed to run {}", project_or_workspace))?;
+        .context(format!("Failed to run {}", params.action.command_string()))?;
 
     String::from_utf8(output.stdout).context("Failed to decode output")
-}
-
-fn make_xcodebuild_command(params: &XcodebuildParams) -> anyhow::Result<String> {
-    let project_or_workspace_argument = params.target.project_or_workspace_argument()?;
-    let configuration_string = params.configuration.command_string();
-    let mut command = format!(
-        "xcodebuild {} {} -scheme {} -destination '{}' -configuration {}",
-        params.action.command_string(),
-        project_or_workspace_argument,
-        params.schema,
-        params.destination,
-        configuration_string
-    );
-    if let Some(archive_path) = &params.archive_path {
-        command += &format!(" -archivePath {}", archive_path);
-    }
-    if let Some(sdk) = &params.sdk {
-        command += &format!(" -sdk {}", sdk.command_string());
-    }
-
-    Ok(command)
 }
 
 #[derive(Debug, PartialEq)]
@@ -85,6 +101,7 @@ pub enum XcodebuildCommandAction {
     Build,
     Test,
     Archive,
+    ExportArchive,
 }
 
 impl XcodebuildCommandAction {
@@ -93,6 +110,7 @@ impl XcodebuildCommandAction {
             XcodebuildCommandAction::Build => String::from("build"),
             XcodebuildCommandAction::Test => String::from("test"),
             XcodebuildCommandAction::Archive => String::from("archive"),
+            XcodebuildCommandAction::ExportArchive => String::from("-exportArchive"),
         }
     }
 }
@@ -269,14 +287,12 @@ mod tests {
     #[test]
     fn test_build_command() {
         let target = BuildTarget::new(Some(&"TestProject.xcodeproj".to_string()), None);
-        let command = make_xcodebuild_command(&XcodebuildParams::new(
-            XcodebuildCommandAction::Build,
-            "TestScheme".to_string(),
-            "iOS Simulator,name=iPhone 15 Pro".to_string(),
-            Configuration::Debug,
-            target,
-        ))
-        .unwrap();
+        let params = &XcodebuildParams::new(XcodebuildCommandAction::Build)
+            .with_scheme("TestScheme".to_string())
+            .with_destination("iOS Simulator,name=iPhone 15 Pro".to_string())
+            .with_configuration(Configuration::Debug)
+            .with_target(target);
+        let command = params.make_xcodebuild_command().unwrap();
 
         assert_eq!(
             command,
@@ -313,14 +329,12 @@ mod tests {
     #[test]
     fn test_test_command() {
         let target = BuildTarget::new(Some(&"TestProject.xcodeproj".to_string()), None);
-        let command = make_xcodebuild_command(&XcodebuildParams::new(
-            XcodebuildCommandAction::Test,
-            "TestScheme".to_string(),
-            "iOS Simulator,name=iPhone 15 Pro".to_string(),
-            Configuration::Release,
-            target,
-        ))
-        .unwrap();
+        let params = XcodebuildParams::new(XcodebuildCommandAction::Test)
+            .with_scheme("TestScheme".to_string())
+            .with_destination("iOS Simulator,name=iPhone 15 Pro".to_string())
+            .with_configuration(Configuration::Release)
+            .with_target(target);
+        let command = params.make_xcodebuild_command().unwrap();
 
         assert_eq!(
             command,
@@ -331,17 +345,13 @@ mod tests {
     #[test]
     fn test_archive_command() {
         let target = BuildTarget::new(Some(&"TestProject.xcodeproj".to_string()), None);
-        let command = make_xcodebuild_command(
-            &XcodebuildParams::new(
-                XcodebuildCommandAction::Archive,
-                "TestScheme".to_string(),
-                "iOS Simulator,name=iPhone 15 Pro".to_string(),
-                Configuration::Release,
-                target,
-            )
-            .with_archive_path("/path/to/archive.xcarchive".to_string()),
-        )
-        .unwrap();
+        let params = XcodebuildParams::new(XcodebuildCommandAction::Archive)
+            .with_scheme("TestScheme".to_string())
+            .with_destination("iOS Simulator,name=iPhone 15 Pro".to_string())
+            .with_configuration(Configuration::Release)
+            .with_target(target)
+            .with_archive_path("/path/to/archive.xcarchive".to_string());
+        let command = params.make_xcodebuild_command().unwrap();
 
         assert_eq!(
             command,
@@ -352,17 +362,13 @@ mod tests {
     #[test]
     fn test_command_with_sdk() {
         let target = BuildTarget::new(Some(&"TestProject.xcodeproj".to_string()), None);
-        let command = make_xcodebuild_command(
-            &XcodebuildParams::new(
-                XcodebuildCommandAction::Build,
-                "TestScheme".to_string(),
-                "iOS Simulator,name=iPhone 15 Pro".to_string(),
-                Configuration::Debug,
-                target,
-            )
-            .with_sdk(SDK::Iphoneos),
-        )
-        .unwrap();
+        let params = XcodebuildParams::new(XcodebuildCommandAction::Build)
+            .with_scheme("TestScheme".to_string())
+            .with_destination("iOS Simulator,name=iPhone 15 Pro".to_string())
+            .with_configuration(Configuration::Debug)
+            .with_target(target)
+            .with_sdk(SDK::Iphoneos);
+        let command = params.make_xcodebuild_command().unwrap();
 
         assert_eq!(
             command,
@@ -373,14 +379,12 @@ mod tests {
     #[test]
     fn test_command_with_workspace() {
         let target = BuildTarget::new(None, Some(&"TestWorkspace.xcworkspace".to_string()));
-        let command = make_xcodebuild_command(&XcodebuildParams::new(
-            XcodebuildCommandAction::Build,
-            "TestScheme".to_string(),
-            "iOS Simulator,name=iPhone 15 Pro".to_string(),
-            Configuration::Debug,
-            target,
-        ))
-        .unwrap();
+        let params = XcodebuildParams::new(XcodebuildCommandAction::Build)
+            .with_scheme("TestScheme".to_string())
+            .with_destination("iOS Simulator,name=iPhone 15 Pro".to_string())
+            .with_configuration(Configuration::Debug)
+            .with_target(target);
+        let command = params.make_xcodebuild_command().unwrap();
 
         assert_eq!(
             command,
@@ -391,18 +395,14 @@ mod tests {
     #[test]
     fn test_command_with_all_options() {
         let target = BuildTarget::new(None, Some(&"TestWorkspace.xcworkspace".to_string()));
-        let command = make_xcodebuild_command(
-            &XcodebuildParams::new(
-                XcodebuildCommandAction::Archive,
-                "TestScheme".to_string(),
-                "Generic/iOS".to_string(),
-                Configuration::Release,
-                target,
-            )
+        let params = XcodebuildParams::new(XcodebuildCommandAction::Archive)
+            .with_scheme("TestScheme".to_string())
+            .with_destination("Generic/iOS".to_string())
+            .with_configuration(Configuration::Release)
+            .with_target(target)
             .with_sdk(SDK::Macosx)
-            .with_archive_path("/tmp/MyApp.xcarchive".to_string()),
-        )
-        .unwrap();
+            .with_archive_path("/tmp/MyApp.xcarchive".to_string());
+        let command = params.make_xcodebuild_command().unwrap();
 
         assert_eq!(
             command,
@@ -413,13 +413,12 @@ mod tests {
     #[test]
     fn test_command_error_with_invalid_target() {
         let target = BuildTarget::new(None, None);
-        let result = make_xcodebuild_command(&XcodebuildParams::new(
-            XcodebuildCommandAction::Build,
-            "TestScheme".to_string(),
-            "iOS Simulator,name=iPhone 15 Pro".to_string(),
-            Configuration::Debug,
-            target,
-        ));
+        let params = XcodebuildParams::new(XcodebuildCommandAction::Build)
+            .with_scheme("TestScheme".to_string())
+            .with_destination("iOS Simulator,name=iPhone 15 Pro".to_string())
+            .with_configuration(Configuration::Debug)
+            .with_target(target);
+        let result = params.make_xcodebuild_command();
 
         assert!(result.is_err());
         assert!(

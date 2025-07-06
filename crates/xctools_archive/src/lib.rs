@@ -1,6 +1,7 @@
 use anyhow::Result;
 use xcbuild_common::{
-    BuildTarget, Configuration, SDK, XcodebuildCommandAction, XcodebuildParams, run_xcodebuild_command,
+    BuildTarget, Configuration, SDK, XcodebuildCommandAction, XcodebuildParams,
+    run_xcodebuild_command,
 };
 
 /// Creates an archive for an Xcode project or workspace using the `xcodebuild` command-line tool.
@@ -12,7 +13,7 @@ use xcbuild_common::{
 ///
 /// # Arguments
 ///
-/// * `schema` - The Xcode scheme name to archive (e.g., "MyApp", "MyApp Release")
+/// * `scheme` - The Xcode scheme name to archive (e.g., "MyApp", "MyApp Release")
 /// * `destination` - The archive destination specifying the target platform:
 ///   - Generic iOS: "generic/platform=iOS"
 ///   - Generic macOS: "generic/platform=macOS"
@@ -111,10 +112,10 @@ use xcbuild_common::{
 /// ## Using the xctools CLI:
 /// ```bash
 /// # Create iOS archive with project file and Release configuration
-/// xctools archive --schema MyApp --destination "generic/platform=iOS" --sdk iphoneos --output MyApp.xcarchive --project MyApp.xcodeproj --configuration release
+/// xctools archive --scheme MyApp --destination "generic/platform=iOS" --sdk iphoneos --output MyApp.xcarchive --project MyApp.xcodeproj --configuration release
 ///
 /// # Create macOS archive with workspace file
-/// xctools archive --schema MyApp --destination "generic/platform=macOS" --sdk macosx --output MyApp.xcarchive --workspace MyApp.xcworkspace --configuration release
+/// xctools archive --scheme MyApp --destination "generic/platform=macOS" --sdk macosx --output MyApp.xcarchive --workspace MyApp.xcworkspace --configuration release
 /// ```
 ///
 /// # Generated Command
@@ -164,7 +165,7 @@ use xcbuild_common::{
 /// - Write permissions for the output directory
 /// - The SDK must match the target platform
 pub fn archive(
-    schema: &String,
+    scheme: &String,
     destination: &String,
     configuration: &Configuration,
     sdk: &SDK,
@@ -173,15 +174,13 @@ pub fn archive(
     workspace: &Option<String>,
 ) -> Result<String> {
     let target = BuildTarget::new(project.as_ref(), workspace.as_ref());
-    let params = XcodebuildParams::new(
-        XcodebuildCommandAction::Archive,
-        schema.clone(),
-        destination.clone(),
-        configuration.clone(),
-        target,
-    )
-    .with_sdk(sdk.clone())
-    .with_archive_path(output.clone());
+    let params = XcodebuildParams::new(XcodebuildCommandAction::Archive)
+        .with_scheme(scheme.clone())
+        .with_destination(destination.clone())
+        .with_configuration(configuration.clone())
+        .with_target(target)
+        .with_sdk(sdk.clone())
+        .with_archive_path(output.clone());
     let output = run_xcodebuild_command(&params)?;
 
     Ok(output)
@@ -479,7 +478,7 @@ mod tests {
     #[test]
     fn test_archive_function_signature() {
         // Test that the archive function accepts the correct parameter types
-        let schema = "TestScheme".to_string();
+        let scheme = "TestScheme".to_string();
         let destination = "generic/platform=iOS".to_string();
         let configuration = Configuration::Release;
         let sdk = SDK::Iphoneos;
@@ -489,7 +488,7 @@ mod tests {
 
         // This should compile and demonstrate the correct function signature
         let _result = archive(
-            &schema,
+            &scheme,
             &destination,
             &configuration,
             &sdk,

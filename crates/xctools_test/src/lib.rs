@@ -1,5 +1,7 @@
 use anyhow::Result;
-use xcbuild_common::{BuildTarget, Configuration, XcodebuildCommandAction, XcodebuildParams, run_xcodebuild_command};
+use xcbuild_common::{
+    BuildTarget, Configuration, XcodebuildCommandAction, XcodebuildParams, run_xcodebuild_command,
+};
 
 /// Runs tests for an Xcode project or workspace using the `xcodebuild` command-line tool.
 ///
@@ -9,7 +11,7 @@ use xcbuild_common::{BuildTarget, Configuration, XcodebuildCommandAction, Xcodeb
 ///
 /// # Arguments
 ///
-/// * `schema` - The Xcode scheme name to test (e.g., "MyApp", "MyAppTests", "MyAppUITests")
+/// * `scheme` - The Xcode scheme name to test (e.g., "MyApp", "MyAppTests", "MyAppUITests")
 /// * `destination` - The test destination specifying the target device or simulator:
 ///   - iOS Simulator: "iOS Simulator,name=iPhone 15 Pro"
 ///   - Generic iOS: "generic/platform=iOS"
@@ -95,16 +97,16 @@ use xcbuild_common::{BuildTarget, Configuration, XcodebuildCommandAction, Xcodeb
 /// ## Using the xctools CLI:
 /// ```bash
 /// # Run unit tests with project file and Debug configuration (default)
-/// xctools test --schema MyAppTests --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj
+/// xctools test --scheme MyAppTests --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj
 ///
 /// # Run UI tests with workspace file and Release configuration
-/// xctools test --schema MyAppUITests --destination "generic/platform=iOS" --workspace MyApp.xcworkspace --configuration release
+/// xctools test --scheme MyAppUITests --destination "generic/platform=iOS" --workspace MyApp.xcworkspace --configuration release
 ///
 /// # Run tests for macOS
-/// xctools test --schema MyAppTests --destination "platform=macOS" --project MyApp.xcodeproj
+/// xctools test --scheme MyAppTests --destination "platform=macOS" --project MyApp.xcodeproj
 ///
 /// # Run all test schemes
-/// xctools test --schema MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj
+/// xctools test --scheme MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj
 /// ```
 ///
 /// # Generated Command
@@ -131,20 +133,18 @@ use xcbuild_common::{BuildTarget, Configuration, XcodebuildCommandAction, Xcodeb
 /// - Test targets must be properly configured in the Xcode project
 /// - For simulator testing, the specified simulator must be available
 pub fn test(
-    schema: &String,
+    scheme: &String,
     destination: &String,
     configuration: &Configuration,
     project: &Option<String>,
     workspace: &Option<String>,
 ) -> Result<String> {
     let target = BuildTarget::new(project.as_ref(), workspace.as_ref());
-    let params = XcodebuildParams::new(
-        XcodebuildCommandAction::Test,
-        schema.clone(),
-        destination.clone(),
-        configuration.clone(),
-        target,
-    );
+    let params = XcodebuildParams::new(XcodebuildCommandAction::Test)
+        .with_scheme(scheme.clone())
+        .with_destination(destination.clone())
+        .with_configuration(configuration.clone())
+        .with_target(target);
     let output = run_xcodebuild_command(&params)?;
 
     Ok(output)
