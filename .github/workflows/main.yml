@@ -9,18 +9,8 @@ jobs:
     test:
         name: Test
         timeout-minutes: 15
-        strategy:
-            matrix:
-                os: [ubuntu-latest, macos-latest]
-        runs-on: ${{ matrix.os }}
+        runs-on: macos-latest
         steps:
-            - uses: actions/checkout@v3
-
-            - name: Install just
-              uses: taiki-e/install-action@just
-
-            - name: Bootstrap
-              run: just bootstrap
-
-            - name: Test
-              run: just test
+            - uses: actions/checkout@v4
+            - uses: actions-rust-lang/setup-rust-toolchain@v1
+            - run: cargo test --all-features
