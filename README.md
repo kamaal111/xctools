@@ -9,6 +9,7 @@ A command-line tool for Xcode project management, structured as a mini monorepo 
     - [Build Command](#build-command)
     - [Test Command](#test-command)
     - [Archive Command](#archive-command)
+    - [Export Archive Command](#export-archive-command)
     - [Upload Command](#upload-command)
     - [Bump Version Command](#bump-version-command)
     - [Acknowledgements Command](#acknowledgements-command)
@@ -25,6 +26,7 @@ XCTools provides utilities for working with Xcode projects:
 - **Build**: Execute xcodebuild commands with various configurations
 - **Test**: Run unit tests, UI tests, and integration tests for Xcode projects
 - **Archive**: Create .xcarchive bundles for distribution and App Store submission
+- **Export Archive**: Export .xcarchive bundles into distributable .ipa/.app files
 - **Upload**: Upload application packages to distribution platforms like App Store and TestFlight
 - **Bump Version**: Update project version numbers and build numbers
 - **Acknowledgements**: Generate acknowledgements files for Swift Package Manager dependencies and git contributors
@@ -87,6 +89,50 @@ xctools archive --scheme MyApp --destination "generic/platform=iOS" --sdk iphone
 
 # Create Debug archive (for testing)
 xctools archive --scheme MyApp --destination "generic/platform=iOS" --sdk iphoneos --output MyApp-Debug.xcarchive --project MyApp.xcodeproj --configuration debug
+```
+
+### Export Archive Command
+
+```bash
+# Export iOS archive for App Store distribution
+xctools export-archive --archive-path MyApp.xcarchive --export-options AppStoreExportOptions.plist --export-path build/appstore
+
+# Export iOS archive for Ad Hoc distribution
+xctools export-archive --archive-path MyApp.xcarchive --export-options AdHocExportOptions.plist --export-path build/adhoc
+
+# Export macOS archive for Developer ID distribution
+xctools export-archive --archive-path MyMacApp.xcarchive --export-options DeveloperIDExportOptions.plist --export-path build/developerid
+
+# Export with custom export path
+xctools export-archive --archive-path ./archives/MyApp-v1.0.xcarchive --export-options ExportOptions.plist --export-path ./exports/MyApp-v1.0
+
+# Export for TestFlight distribution
+xctools export-archive --archive-path MyApp.xcarchive --export-options TestFlightExportOptions.plist --export-path build/testflight
+```
+
+The export archive command:
+- Exports .xcarchive bundles into distributable .ipa (iOS) or .app (macOS) files using `xcodebuild -exportArchive`
+- Requires an ExportOptions.plist file that specifies the export method, team ID, and signing configuration
+- Supports multiple distribution methods: App Store, TestFlight, Ad Hoc, Enterprise, and Development
+- Creates properly signed applications ready for distribution or submission
+- Automatically handles code signing and provisioning profile selection based on export options
+
+Example ExportOptions.plist for App Store distribution:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>method</key>
+    <string>app-store</string>
+    <key>teamID</key>
+    <string>YOUR_TEAM_ID</string>
+    <key>uploadBitcode</key>
+    <false/>
+    <key>compileBitcode</key>
+    <false/>
+</dict>
+</plist>
 ```
 
 ### Upload Command
@@ -160,6 +206,7 @@ xctools/
 │   ├── xctools_acknowledgements/ # Acknowledgements generation library
 │   ├── xctools_archive/          # Archive creation library
 │   ├── xctools_build/            # Build command library
+│   ├── xctools_export_archive/   # Archive export library
 │   ├── xctools_test/             # Test command library
 │   ├── xctools_bump_version/     # Version bumping library
 │   ├── xctools_upload/           # Upload command library
@@ -171,6 +218,7 @@ xctools/
 - **`xctools_acknowledgements`**: Library for generating acknowledgements files
 - **`xctools_archive`**: Library for creating .xcarchive bundles for distribution
 - **`xctools_build`**: Library for Xcode build operations
+- **`xctools_export_archive`**: Library for exporting .xcarchive bundles into distributable formats
 - **`xctools_test`**: Library for running Xcode tests
 - **`xctools_bump_version`**: Library for version management
 - **`xctools_upload`**: Library for uploading applications to distribution platforms

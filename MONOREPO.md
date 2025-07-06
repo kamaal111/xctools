@@ -24,6 +24,10 @@ xctools/
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       └── lib.rs
+│   ├── xctools_export_archive/  # Archive export library
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       └── lib.rs
 │   ├── xctools_test/            # Test command library
 │   │   ├── Cargo.toml
 │   │   └── src/
@@ -73,6 +77,17 @@ Contains the Xcode archive functionality:
 - Uses shared `Configuration`, `BuildTarget`, `SDK`, and `XcodebuildCommandAction` from `xcbuild_common`
 - Generates archives with debug symbols (dSYMs) for crash symbolication
 
+### `xctools_export_archive`
+
+Contains the Xcode archive export functionality:
+- `export_archive()` function for exporting .xcarchive bundles into distributable formats using xcodebuild -exportArchive commands
+- Exports .ipa files for iOS applications and .app bundles for macOS applications
+- Supports multiple distribution methods: App Store, TestFlight, Ad Hoc, Enterprise, and Development
+- Uses ExportOptions.plist files to specify export method, team ID, and signing configuration
+- Handles code signing and provisioning profile selection automatically
+- Creates properly signed applications ready for distribution or App Store submission
+- Uses shared `XcodebuildCommandAction` and `XcodebuildParams` from `xcbuild_common`
+
 ### `xctools_build`
 
 Contains the Xcode build functionality:
@@ -120,6 +135,7 @@ cargo build -p xcbuild_common
 cargo build -p xctools_cli
 cargo build -p xctools_acknowledgements
 cargo build -p xctools_archive
+cargo build -p xctools_export_archive
 cargo build -p xctools_build
 cargo build -p xctools_test
 cargo build -p xctools_bump_version
@@ -137,6 +153,7 @@ cargo test -p xcbuild_common
 cargo test -p xctools_cli
 cargo test -p xctools_acknowledgements
 cargo test -p xctools_archive
+cargo test -p xctools_export_archive
 cargo test -p xctools_build
 cargo test -p xctools_test
 cargo test -p xctools_bump_version
@@ -164,6 +181,9 @@ xctools test --scheme MyAppTests --destination "iOS Simulator,name=iPhone 15 Pro
 
 # Create Xcode archive
 xctools archive --scheme MyApp --destination "generic/platform=iOS" --sdk iphoneos --output MyApp.xcarchive --project MyApp.xcodeproj --configuration release
+
+# Export Xcode archive for distribution
+xctools export-archive --archive-path MyApp.xcarchive --export-options ExportOptions.plist --export-path build/export
 
 # Bump version
 xctools bump-version --build-number 42 --version-number 2.1.0
