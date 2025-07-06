@@ -101,7 +101,7 @@ help-cmd command:
     {{ CARGO }} run -- {{ command }} --help
 
 # Bootstrap project
-Bootstrap: install-rust install-cov-tool
+bootstrap: install-rust install-cov-tool
 
 [private]
 install-rust:
