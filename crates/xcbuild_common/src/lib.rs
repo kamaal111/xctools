@@ -13,6 +13,8 @@ pub struct XcodebuildParams {
     pub target: Option<BuildTarget>,
     pub sdk: Option<SDK>,
     pub archive_path: Option<String>,
+    pub export_path: Option<String>,
+    pub export_options: Option<String>,
 }
 
 impl XcodebuildParams {
@@ -25,6 +27,8 @@ impl XcodebuildParams {
             target: None,
             sdk: None,
             archive_path: None,
+            export_path: None,
+            export_options: None,
         }
     }
 
@@ -48,8 +52,24 @@ impl XcodebuildParams {
         if let Some(sdk) = &self.sdk {
             command += &format!(" -sdk {}", sdk.command_string());
         }
+        if let Some(export_path) = &self.export_path {
+            command += &format!(" -exportPath {}", export_path);
+        }
+        if let Some(export_options) = &self.export_options {
+            command += &format!(" -exportOptionsPlist {}", export_options);
+        }
 
         Ok(command)
+    }
+
+    pub fn with_export_options(mut self, export_options: String) -> Self {
+        self.export_options = Some(export_options);
+        self
+    }
+
+    pub fn with_export_path(mut self, export_path: String) -> Self {
+        self.export_path = Some(export_path);
+        self
     }
 
     pub fn with_scheme(mut self, scheme: String) -> Self {
@@ -444,6 +464,54 @@ mod tests {
         assert_eq!(
             target.project_or_workspace_argument().unwrap(),
             "-project TestProject.xcodeproj"
+        );
+    }
+
+    #[test]
+    fn test_export_archive_command_with_export_path() {
+        let params = XcodebuildParams::new(XcodebuildCommandAction::ExportArchive)
+            .with_archive_path("/path/to/archive.xcarchive".to_string())
+            .with_export_path("/path/to/export".to_string());
+        let command = params.make_xcodebuild_command().unwrap();
+
+        assert_eq!(
+            command,
+            "xcodebuild -exportArchive -archivePath /path/to/archive.xcarchive -exportPath /path/to/export"
+        );
+    }
+
+    #[test]
+    fn test_export_archive_command_with_export_options() {
+        let params = XcodebuildParams::new(XcodebuildCommandAction::ExportArchive)
+            .with_archive_path("/path/to/archive.xcarchive".to_string())
+            .with_export_options("/path/to/ExportOptions.plist".to_string());
+        let command = params.make_xcodebuild_command().unwrap();
+
+        assert_eq!(
+            command,
+            "xcodebuild -exportArchive -archivePath /path/to/archive.xcarchive -exportOptionsPlist /path/to/ExportOptions.plist"
+        );
+    }
+
+    #[test]
+    fn test_export_archive_command_with_all_export_options() {
+        let params = XcodebuildParams::new(XcodebuildCommandAction::ExportArchive)
+            .with_archive_path("/path/to/archive.xcarchive".to_string())
+            .with_export_path("/path/to/export".to_string())
+            .with_export_options("/path/to/ExportOptions.plist".to_string());
+        let command = params.make_xcodebuild_command().unwrap();
+
+        assert_eq!(
+            command,
+            "xcodebuild -exportArchive -archivePath /path/to/archive.xcarchive -exportPath /path/to/export -exportOptionsPlist /path/to/ExportOptions.plist"
+        );
+    }
+
+    #[test]
+    fn test_export_archive_action_string() {
+        assert_eq!(
+            XcodebuildCommandAction::ExportArchive.command_string(),
+            "-exportArchive"
         );
     }
 }

@@ -635,6 +635,7 @@ name = "xctools_export_archive"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "xcbuild_common",
 ]
 
 [[package]]

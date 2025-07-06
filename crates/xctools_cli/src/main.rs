@@ -168,6 +168,10 @@ enum Commands {
         /// Path to export options plist file
         #[arg(short, long)]
         export_options: String,
+
+        /// Export path
+        #[arg(long, default_value = ".")]
+        export_path: String,
     },
 }
 
@@ -219,7 +223,8 @@ fn main() {
         Commands::ExportArchive {
             archive_path,
             export_options,
-        } => export_archive(&archive_path, &export_options),
+            export_path,
+        } => export_archive(&archive_path, &export_options, &export_path),
     };
     match output_result {
         Err(error) => {
