@@ -1653,3 +1653,145 @@ fn test_archive_command_argument_parsing_comprehensive() {
     assert!(!stderr.contains("cannot be used with"));
     assert!(!stderr.contains("unexpected argument"));
 }
+
+// ---- notarize command tests ----
+
+#[test]
+fn test_notarize_command_help() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&["notarize", "--help"]);
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Notarize"))
+        .stdout(predicate::str::contains("--file-path"))
+        .stdout(predicate::str::contains("--apple-id"))
+        .stdout(predicate::str::contains("--password"))
+        .stdout(predicate::str::contains("--team-id"));
+}
+
+#[test]
+fn test_notarize_command_missing_required_args() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.arg("notarize");
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("required"));
+}
+
+#[test]
+fn test_notarize_command_missing_apple_id() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "notarize",
+        "--file-path",
+        "MyApp.dmg",
+        "--password",
+        "xxxx-xxxx-xxxx-xxxx",
+        "--team-id",
+        "A1B2C3D4E5",
+    ]);
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("required"));
+}
+
+#[test]
+fn test_notarize_command_propagates_error_to_user() {
+    // Runs with valid args but a non-existent file so the command fails fast
+    // (notarytool validates file existence before contacting Apple).
+    // Asserts that the failure is surfaced to the user via stderr rather than silently ignored.
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "notarize",
+        "--file-path",
+        "MyApp.dmg",
+        "--apple-id",
+        "developer@example.com",
+        "--password",
+        "xxxx-xxxx-xxxx-xxxx",
+        "--team-id",
+        "A1B2C3D4E5",
+    ]);
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("Error:"))
+        .stderr(predicate::str::contains("the following required arguments were not provided").not())
+        .stderr(predicate::str::contains("invalid value").not())
+        .stderr(predicate::str::contains("unexpected argument").not());
+}
+
+// ---- setup-signing command tests ----
+
+#[test]
+fn test_setup_signing_command_help() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&["setup-signing", "--help"]);
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("signing"))
+        .stdout(predicate::str::contains("--certificate-path"))
+        .stdout(predicate::str::contains("--certificate-password"))
+        .stdout(predicate::str::contains("--provisioning-profile"));
+}
+
+#[test]
+fn test_setup_signing_command_missing_required_args() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.arg("setup-signing");
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("required"));
+}
+
+#[test]
+fn test_setup_signing_command_missing_certificate_password() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&["setup-signing", "--certificate-path", "signing.p12"]);
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("required"));
+}
+
+#[test]
+fn test_setup_signing_command_propagates_error_to_user() {
+    // Runs with valid args but a non-existent certificate so the command fails fast.
+    // Asserts that the failure is surfaced to the user via stderr rather than silently ignored.
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "setup-signing",
+        "--certificate-path",
+        "signing.p12",
+        "--certificate-password",
+        "secretpassword",
+    ]);
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("Error:"))
+        .stderr(predicate::str::contains("the following required arguments were not provided").not())
+        .stderr(predicate::str::contains("invalid value").not())
+        .stderr(predicate::str::contains("unexpected argument").not());
+}
+
+#[test]
+fn test_setup_signing_command_propagates_error_with_multiple_profiles() {
+    // Runs with valid args including provisioning profiles that don't exist.
+    // Asserts that the failure is surfaced to the user via stderr rather than silently ignored.
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "setup-signing",
+        "--certificate-path",
+        "signing.p12",
+        "--certificate-password",
+        "secretpassword",
+        "--provisioning-profile",
+        "AppStore.mobileprovision",
+        "--provisioning-profile",
+        "WatchApp.mobileprovision",
+    ]);
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("Error:"))
+        .stderr(predicate::str::contains("the following required arguments were not provided").not())
+        .stderr(predicate::str::contains("invalid value").not())
+        .stderr(predicate::str::contains("unexpected argument").not());
+}

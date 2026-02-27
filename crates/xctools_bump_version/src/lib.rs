@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail, Result};
+use anyhow::{Result, anyhow, bail};
 use glob::glob;
 use semver::Version;
 use std::path::{Path, PathBuf};

@@ -11,6 +11,8 @@ A command-line tool for Xcode project management, structured as a mini monorepo 
     - [Archive Command](#archive-command)
     - [Export Archive Command](#export-archive-command)
     - [Upload Command](#upload-command)
+    - [Notarize Command](#notarize-command)
+    - [Setup Signing Command](#setup-signing-command)
     - [Bump Version Command](#bump-version-command)
     - [Acknowledgements Command](#acknowledgements-command)
   - [Development](#development)
@@ -28,6 +30,8 @@ XCTools provides utilities for working with Xcode projects:
 - **Archive**: Create .xcarchive bundles for distribution and App Store submission
 - **Export Archive**: Export .xcarchive bundles into distributable .ipa/.app files
 - **Upload**: Upload application packages to distribution platforms like App Store and TestFlight
+- **Notarize**: Notarize macOS applications for distribution outside the Mac App Store
+- **Setup Signing**: Configure code signing in CI environments by importing certificates and installing provisioning profiles
 - **Bump Version**: Update project version numbers and build numbers
 - **Acknowledgements**: Generate acknowledgements files for Swift Package Manager dependencies and git contributors
 
@@ -158,6 +162,50 @@ The upload command:
 - Provides detailed output from the upload process
 - Supports App Store, TestFlight, and enterprise distribution workflows
 
+### Notarize Command
+
+```bash
+# Notarize a macOS disk image
+xctools notarize --file-path MyApp.dmg --apple-id developer@example.com \
+    --password app-specific-password --team-id A1B2C3D4E5
+
+# Notarize a macOS package
+xctools notarize --file-path MyApp.pkg --apple-id developer@example.com \
+    --password app-specific-password --team-id A1B2C3D4E5
+```
+
+The notarize command:
+- Submits a macOS application (.dmg, .pkg, or zipped .app) to Apple's notarization service using `xcrun notarytool submit --wait`
+- Blocks until notarization completes (typically 1–5 minutes)
+- Staples the resulting notarization ticket to the file using `xcrun stapler staple`
+- Notarization is required to distribute macOS apps outside the Mac App Store on macOS 10.15+
+- Requires an app-specific password generated at <https://appleid.apple.com>
+- Requires Xcode 13 or later
+
+### Setup Signing Command
+
+```bash
+# Import a certificate and install provisioning profiles
+xctools setup-signing \
+    --certificate-path signing.p12 \
+    --certificate-password "$CERT_PASSWORD" \
+    --provisioning-profile AppStore.mobileprovision \
+    --provisioning-profile WatchApp.mobileprovision
+
+# Import a certificate only (no provisioning profiles, e.g. Developer ID signing)
+xctools setup-signing \
+    --certificate-path DeveloperID.p12 \
+    --certificate-password "$CERT_PASSWORD"
+```
+
+The setup-signing command:
+- Creates a dedicated keychain (`xctools-signing.keychain`) for the build
+- Imports the provided P12 certificate into the keychain
+- Sets the keychain as the default and allows `codesign` to access it without user prompts
+- Copies each provisioning profile to `~/Library/MobileDevice/Provisioning Profiles/`
+- Designed for CI environments where code signing must be configured non-interactively
+- Pass credentials via environment variables (e.g. `$CERT_PASSWORD`) rather than hardcoding
+
 ### Bump Version Command
 
 ```bash
@@ -207,6 +255,8 @@ xctools/
 │   ├── xctools_archive/          # Archive creation library
 │   ├── xctools_build/            # Build command library
 │   ├── xctools_export_archive/   # Archive export library
+│   ├── xctools_notarize/         # macOS notarization library
+│   ├── xctools_setup_signing/    # CI code signing setup library
 │   ├── xctools_test/             # Test command library
 │   ├── xctools_bump_version/     # Version bumping library
 │   ├── xctools_upload/           # Upload command library
@@ -219,6 +269,8 @@ xctools/
 - **`xctools_archive`**: Library for creating .xcarchive bundles for distribution
 - **`xctools_build`**: Library for Xcode build operations
 - **`xctools_export_archive`**: Library for exporting .xcarchive bundles into distributable formats
+- **`xctools_notarize`**: Library for notarizing macOS applications
+- **`xctools_setup_signing`**: Library for CI code signing setup (certificates and provisioning profiles)
 - **`xctools_test`**: Library for running Xcode tests
 - **`xctools_bump_version`**: Library for version management
 - **`xctools_upload`**: Library for uploading applications to distribution platforms
