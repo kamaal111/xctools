@@ -18,6 +18,8 @@ xctools_test = { path = "../xctools_test" }
 xctools_archive = { path = "../xctools_archive" }
 xctools_upload = { path = "../xctools_upload" }
 xctools_export_archive = { path = "../xctools_export_archive" }
+xctools_notarize = { path = "../xctools_notarize" }
+xctools_setup_signing = { path = "../xctools_setup_signing" }
 xcbuild_common = { path = "../xcbuild_common" }
 
 [dev-dependencies]

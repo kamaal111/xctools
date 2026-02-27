@@ -8,6 +8,8 @@ members = [
     "crates/xctools_archive",
     "crates/xctools_upload",
     "crates/xctools_export_archive",
+    "crates/xctools_notarize",
+    "crates/xctools_setup_signing",
     "crates/xcbuild_common",
 ]
 resolver = "2"

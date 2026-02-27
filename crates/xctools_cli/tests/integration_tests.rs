@@ -1653,3 +1653,148 @@ fn test_archive_command_argument_parsing_comprehensive() {
     assert!(!stderr.contains("cannot be used with"));
     assert!(!stderr.contains("unexpected argument"));
 }
+
+// ---- notarize command tests ----
+
+#[test]
+fn test_notarize_command_help() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&["notarize", "--help"]);
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Notarize"))
+        .stdout(predicate::str::contains("--file-path"))
+        .stdout(predicate::str::contains("--apple-id"))
+        .stdout(predicate::str::contains("--password"))
+        .stdout(predicate::str::contains("--team-id"));
+}
+
+#[test]
+fn test_notarize_command_missing_required_args() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.arg("notarize");
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("required"));
+}
+
+#[test]
+fn test_notarize_command_missing_apple_id() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "notarize",
+        "--file-path",
+        "MyApp.dmg",
+        "--password",
+        "xxxx-xxxx-xxxx-xxxx",
+        "--team-id",
+        "A1B2C3D4E5",
+    ]);
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("required"));
+}
+
+#[test]
+fn test_notarize_command_accepts_valid_args() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "notarize",
+        "--file-path",
+        "MyApp.dmg",
+        "--apple-id",
+        "developer@example.com",
+        "--password",
+        "xxxx-xxxx-xxxx-xxxx",
+        "--team-id",
+        "A1B2C3D4E5",
+    ]);
+
+    let output = cmd.output().unwrap();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Ensure we don't get CLI argument parsing errors
+    assert!(!stderr.contains("error: the following required arguments were not provided"));
+    assert!(!stderr.contains("invalid value"));
+    assert!(!stderr.contains("unexpected argument"));
+}
+
+// ---- setup-signing command tests ----
+
+#[test]
+fn test_setup_signing_command_help() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&["setup-signing", "--help"]);
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("signing"))
+        .stdout(predicate::str::contains("--certificate-path"))
+        .stdout(predicate::str::contains("--certificate-password"))
+        .stdout(predicate::str::contains("--provisioning-profile"));
+}
+
+#[test]
+fn test_setup_signing_command_missing_required_args() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.arg("setup-signing");
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("required"));
+}
+
+#[test]
+fn test_setup_signing_command_missing_certificate_password() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&["setup-signing", "--certificate-path", "signing.p12"]);
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("required"));
+}
+
+#[test]
+fn test_setup_signing_command_accepts_valid_args_no_profiles() {
+    let tmp = tempdir().unwrap();
+    let cert_path = tmp.path().join("signing.p12");
+    fs::write(&cert_path, b"fake p12 content").unwrap();
+
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "setup-signing",
+        "--certificate-path",
+        cert_path.to_str().unwrap(),
+        "--certificate-password",
+        "secretpassword",
+    ]);
+
+    let output = cmd.output().unwrap();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Ensure we don't get CLI argument parsing errors
+    assert!(!stderr.contains("error: the following required arguments were not provided"));
+    assert!(!stderr.contains("invalid value"));
+    assert!(!stderr.contains("unexpected argument"));
+}
+
+#[test]
+fn test_setup_signing_command_accepts_multiple_provisioning_profiles() {
+    let mut cmd = Command::cargo_bin("xctools").unwrap();
+    cmd.args(&[
+        "setup-signing",
+        "--certificate-path",
+        "signing.p12",
+        "--certificate-password",
+        "secretpassword",
+        "--provisioning-profile",
+        "AppStore.mobileprovision",
+        "--provisioning-profile",
+        "WatchApp.mobileprovision",
+    ]);
+
+    let output = cmd.output().unwrap();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Ensure we don't get CLI argument parsing errors
+    assert!(!stderr.contains("error: the following required arguments were not provided"));
+    assert!(!stderr.contains("invalid value"));
+    assert!(!stderr.contains("unexpected argument"));
+}

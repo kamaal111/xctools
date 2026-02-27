@@ -5,6 +5,8 @@ use xctools_archive::archive;
 use xctools_build::build;
 use xctools_bump_version::bump_version;
 use xctools_export_archive::export_archive;
+use xctools_notarize::notarize;
+use xctools_setup_signing::setup_signing;
 use xctools_test::test;
 use xctools_upload::upload;
 
@@ -173,6 +175,42 @@ enum Commands {
         #[arg(long, default_value = ".")]
         export_path: String,
     },
+
+    /// Notarize a macOS application, disk image, or package
+    #[command()]
+    Notarize {
+        /// Path to the file to notarize (.dmg, .pkg, or zipped .app)
+        #[arg(short, long)]
+        file_path: String,
+
+        /// Apple ID email address for authentication
+        #[arg(short, long)]
+        apple_id: String,
+
+        /// App-specific password for the Apple ID
+        #[arg(short, long)]
+        password: String,
+
+        /// Apple Developer Team ID (10-character identifier)
+        #[arg(short, long)]
+        team_id: String,
+    },
+
+    /// Set up code signing for CI by importing a certificate and installing provisioning profiles
+    #[command()]
+    SetupSigning {
+        /// Path to the P12 certificate file
+        #[arg(short, long)]
+        certificate_path: String,
+
+        /// Password for the P12 certificate
+        #[arg(long)]
+        certificate_password: String,
+
+        /// Paths to provisioning profile files to install (may be specified multiple times)
+        #[arg(long)]
+        provisioning_profile: Vec<String>,
+    },
 }
 
 fn main() {
@@ -225,6 +263,21 @@ fn main() {
             export_options,
             export_path,
         } => export_archive(&archive_path, &export_options, &export_path),
+        Commands::Notarize {
+            file_path,
+            apple_id,
+            password,
+            team_id,
+        } => notarize(&file_path, &apple_id, &password, &team_id),
+        Commands::SetupSigning {
+            certificate_path,
+            certificate_password,
+            provisioning_profile,
+        } => setup_signing(
+            &certificate_path,
+            &certificate_password,
+            &provisioning_profile,
+        ),
     };
     match output_result {
         Err(error) => {
