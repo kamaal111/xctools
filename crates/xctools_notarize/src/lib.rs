@@ -117,19 +117,23 @@ fn make_stapler_staple_command(file_path: &str) -> String {
 mod tests {
     use super::*;
 
+    const TEST_APPLE_ID: &str = "developer@example.com";
+    const TEST_TEAM_ID: &str = "A1B2C3D4E5";
+    const TEST_CREDENTIAL: &str = "xxxx-xxxx-xxxx-xxxx";
+
     #[test]
     fn test_make_notarytool_submit_command() {
         let result = make_notarytool_submit_command(
             "MyApp.dmg",
-            "developer@example.com",
-            "app-specific-password",
-            "A1B2C3D4E5",
+            TEST_APPLE_ID,
+            TEST_CREDENTIAL,
+            TEST_TEAM_ID,
         );
 
         assert_eq!(
             result,
             "xcrun notarytool submit MyApp.dmg --apple-id developer@example.com \
-             --password app-specific-password --team-id A1B2C3D4E5 --wait"
+             --password xxxx-xxxx-xxxx-xxxx --team-id A1B2C3D4E5 --wait"
         );
     }
 
@@ -138,14 +142,14 @@ mod tests {
         let result = make_notarytool_submit_command(
             "/path/to/MyApp.pkg",
             "mac.developer@example.com",
-            "secure-password",
+            TEST_CREDENTIAL,
             "Z9Y8X7W6V5",
         );
 
         assert_eq!(
             result,
             "xcrun notarytool submit /path/to/MyApp.pkg --apple-id mac.developer@example.com \
-             --password secure-password --team-id Z9Y8X7W6V5 --wait"
+             --password xxxx-xxxx-xxxx-xxxx --team-id Z9Y8X7W6V5 --wait"
         );
     }
 
@@ -154,7 +158,7 @@ mod tests {
         let result = make_notarytool_submit_command(
             "./build/MyApp.zip",
             "team@company.com",
-            "xxxx-xxxx-xxxx-xxxx",
+            TEST_CREDENTIAL,
             "TEAMID1234",
         );
 
