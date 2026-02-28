@@ -85,7 +85,7 @@ pub fn export_archive(
     Ok(output)
 }
 
-#[cfg(test)]
+#[cfg(all(test, target_os = "macos"))]
 mod tests {
     use super::*;
 

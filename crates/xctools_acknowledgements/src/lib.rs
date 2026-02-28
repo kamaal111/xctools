@@ -1115,6 +1115,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(target_os = "macos")]
     fn test_run_zsh_command_success() {
         let result = run_zsh_command(&"echo 'test'");
         assert!(result.is_some());
