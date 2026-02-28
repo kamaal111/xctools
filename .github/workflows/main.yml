@@ -6,11 +6,24 @@ concurrency:
     cancel-in-progress: true
 
 jobs:
-    test:
-        name: Test
+    test-units:
+        name: Test Units
         timeout-minutes: 15
-        runs-on: macos-latest
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
         steps:
             - uses: actions/checkout@v4
             - uses: actions-rust-lang/setup-rust-toolchain@v1
-            - run: cargo test --all-features
+            - run: cargo test --lib --all-features
+
+    test-integration:
+        name: Test Integration
+        timeout-minutes: 15
+        runs-on: macos-latest
+        permissions:
+            contents: read
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions-rust-lang/setup-rust-toolchain@v1
+            - run: cargo test --test integration_tests --all-features
