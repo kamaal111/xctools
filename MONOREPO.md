@@ -28,6 +28,14 @@ xctools/
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       └── lib.rs
+│   ├── xctools_notarize/        # macOS notarization library
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       └── lib.rs
+│   ├── xctools_setup_signing/   # CI signing setup library
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       └── lib.rs
 │   ├── xctools_test/            # Test command library
 │   │   ├── Cargo.toml
 │   │   └── src/
@@ -117,6 +125,22 @@ Contains the application upload functionality:
 - Handles authentication using Apple ID credentials
 - Provides detailed output from the upload process
 
+### `xctools_notarize`
+
+Contains the macOS notarization functionality:
+- `notarize()` function for submitting a `.dmg`, `.pkg`, or zipped `.app`
+- Uses `xcrun notarytool submit --wait`
+- Staples the notarization ticket with `xcrun stapler staple`
+- Intended for macOS distribution outside the Mac App Store
+
+### `xctools_setup_signing`
+
+Contains CI signing setup functionality:
+- `setup_signing()` function for importing P12 certificates
+- Creates and unlocks a dedicated keychain for the job
+- Installs provisioning profiles into `~/Library/MobileDevice/Provisioning Profiles/`
+- Designed for non-interactive CI release pipelines
+
 ### `xctools_cli`
 
 The main command-line interface that:
@@ -140,6 +164,8 @@ cargo build -p xctools_build
 cargo build -p xctools_test
 cargo build -p xctools_bump_version
 cargo build -p xctools_upload
+cargo build -p xctools_notarize
+cargo build -p xctools_setup_signing
 ```
 
 ## Testing
@@ -158,6 +184,8 @@ cargo test -p xctools_build
 cargo test -p xctools_test
 cargo test -p xctools_bump_version
 cargo test -p xctools_upload
+cargo test -p xctools_notarize
+cargo test -p xctools_setup_signing
 ```
 
 ## Benefits of this Structure
@@ -184,6 +212,12 @@ xctools archive --scheme MyApp --destination "generic/platform=iOS" --sdk iphone
 
 # Export Xcode archive for distribution
 xctools export-archive --archive-path MyApp.xcarchive --export-options ExportOptions.plist --export-path build/export
+
+# Set up signing for CI
+xctools setup-signing --certificate-path signing.p12 --certificate-password "$CERT_PASSWORD"
+
+# Notarize a macOS artifact
+xctools notarize --file-path MyApp.dmg --apple-id "$APPLE_ID" --password "$APP_SPECIFIC_PASSWORD" --team-id A1B2C3D4E5
 
 # Bump version
 xctools bump-version --build-number 42 --version-number 2.1.0
