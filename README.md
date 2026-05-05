@@ -50,78 +50,109 @@ cargo build --release
 
 ## Usage
 
+XCTools is organized around the normal Xcode delivery flow:
+
+1. `setup-signing` prepares a CI machine for code signing.
+2. `build` compiles a project or workspace.
+3. `test` validates the build on a simulator or macOS destination.
+4. `archive` creates a distributable `.xcarchive`.
+5. `export-archive` turns that archive into an `.ipa`, `.app`, or other export artifact.
+6. `upload` sends the exported artifact to Apple distribution services.
+7. `notarize` is the macOS-specific step for apps distributed outside the Mac App Store.
+8. `bump-version` updates marketing/build versions in `project.pbxproj`.
+9. `acknowledgements` generates dependency and contributor credits for shipping apps.
+
+### Common command patterns
+
+- `build`, `test`, and `archive` always require **exactly one** of `--project` or `--workspace`.
+- `--configuration` defaults to `debug`; use `release` for distribution builds.
+- `--destination` is passed through to `xcodebuild`, so use the same destination strings you would use with native Xcode CLI commands.
+- Commands that accept credentials (`upload`, `notarize`, `setup-signing`) are intended for CI use. Prefer environment variables over hardcoded secrets.
+
 ### Build Command
 
+**Why you use it:** compile an app, framework, or test target without opening Xcode. This is the fastest way to verify that a scheme can build in local scripts and CI jobs.
+
+**When to use it:** before running tests, before archiving, or whenever you want a simple compile check for a specific scheme and destination.
+
+**What it runs:** `xcodebuild build`
+
 ```bash
-# Build with project file
+# Build with a project
 xctools build --scheme MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj
 
-# Build with workspace file  
+# Build with a workspace
 xctools build --scheme MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --workspace MyApp.xcworkspace
 
-# Build with specific configuration
-xctools build --scheme MyApp --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj --configuration release
+# Build a Release configuration
+xctools build --scheme MyApp --destination "platform=macOS" --project MyApp.xcodeproj --configuration release
 ```
+
+Use `build` when you only need compilation output. If you need test execution, use `test` instead.
 
 ### Test Command
 
+**Why you use it:** run Xcode-managed tests from the command line with the same scheme/destination model used by `xcodebuild test`.
+
+**When to use it:** to validate unit tests, UI tests, or other test bundles in CI and local automation.
+
+**What it runs:** `xcodebuild test`
+
 ```bash
-# Run unit tests with project file
+# Run unit tests from a project
 xctools test --scheme MyAppTests --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj
 
-# Run UI tests with workspace file  
+# Run tests from a workspace
 xctools test --scheme MyAppUITests --destination "iOS Simulator,name=iPhone 15 Pro" --workspace MyApp.xcworkspace
 
-# Run tests with specific configuration
-xctools test --scheme MyAppTests --destination "iOS Simulator,name=iPhone 15 Pro" --project MyApp.xcodeproj --configuration release
-
-# Run tests for macOS
-xctools test --scheme MyAppTests --destination "platform=macOS" --project MyApp.xcodeproj
+# Run macOS tests
+xctools test --scheme MyMacAppTests --destination "platform=macOS" --project MyMacApp.xcodeproj
 ```
+
+Use `test` instead of `build` when you need proof that the compiled app still behaves correctly.
 
 ### Archive Command
 
+**Why you use it:** create the `.xcarchive` bundle required for exporting or distributing an app.
+
+**When to use it:** after a successful build/test run and before `export-archive`.
+
+**What it runs:** `xcodebuild archive`
+
 ```bash
-# Create iOS archive with project file and Release configuration
+# Archive an iOS app for distribution
 xctools archive --scheme MyApp --destination "generic/platform=iOS" --sdk iphoneos --output MyApp.xcarchive --project MyApp.xcodeproj --configuration release
 
-# Create macOS archive with workspace file
-xctools archive --scheme MyApp --destination "generic/platform=macOS" --sdk macosx --output MyApp.xcarchive --workspace MyApp.xcworkspace --configuration release
+# Archive a macOS app from a workspace
+xctools archive --scheme MyMacApp --destination "generic/platform=macOS" --sdk macosx --output MyMacApp.xcarchive --workspace MyMacApp.xcworkspace --configuration release
 
-# Create archive with custom output path
-xctools archive --scheme MyApp --destination "generic/platform=iOS" --sdk iphoneos --output ./build/archives/MyApp-v1.0.xcarchive --project MyApp.xcodeproj
-
-# Create Debug archive (for testing)
-xctools archive --scheme MyApp --destination "generic/platform=iOS" --sdk iphoneos --output MyApp-Debug.xcarchive --project MyApp.xcodeproj --configuration debug
+# Archive to a custom location
+xctools archive --scheme MyApp --destination "generic/platform=iOS" --sdk iphoneos --output ./build/archives/MyApp-v1.0.xcarchive --project MyApp.xcodeproj --configuration release
 ```
+
+Use a generic destination such as `generic/platform=iOS` or `generic/platform=macOS` for distribution archives.
 
 ### Export Archive Command
 
+**Why you use it:** turn an `.xcarchive` into the package you actually distribute, such as an `.ipa` or signed macOS export.
+
+**When to use it:** after `archive`, once you know which distribution method you need (App Store, TestFlight, ad hoc, enterprise, development, Developer ID, and so on).
+
+**What it runs:** `xcodebuild -exportArchive`
+
 ```bash
-# Export iOS archive for App Store distribution
+# Export an App Store build
 xctools export-archive --archive-path MyApp.xcarchive --export-options AppStoreExportOptions.plist --export-path build/appstore
 
-# Export iOS archive for Ad Hoc distribution
+# Export an ad hoc build
 xctools export-archive --archive-path MyApp.xcarchive --export-options AdHocExportOptions.plist --export-path build/adhoc
 
-# Export macOS archive for Developer ID distribution
+# Export a macOS Developer ID build
 xctools export-archive --archive-path MyMacApp.xcarchive --export-options DeveloperIDExportOptions.plist --export-path build/developerid
-
-# Export with custom export path
-xctools export-archive --archive-path ./archives/MyApp-v1.0.xcarchive --export-options ExportOptions.plist --export-path ./exports/MyApp-v1.0
-
-# Export for TestFlight distribution
-xctools export-archive --archive-path MyApp.xcarchive --export-options TestFlightExportOptions.plist --export-path build/testflight
 ```
 
-The export archive command:
-- Exports .xcarchive bundles into distributable .ipa (iOS) or .app (macOS) files using `xcodebuild -exportArchive`
-- Requires an ExportOptions.plist file that specifies the export method, team ID, and signing configuration
-- Supports multiple distribution methods: App Store, TestFlight, Ad Hoc, Enterprise, and Development
-- Creates properly signed applications ready for distribution or submission
-- Automatically handles code signing and provisioning profile selection based on export options
+The `--export-options` plist controls signing and distribution behavior. A minimal App Store example looks like this:
 
-Example ExportOptions.plist for App Store distribution:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -131,114 +162,115 @@ Example ExportOptions.plist for App Store distribution:
     <string>app-store</string>
     <key>teamID</key>
     <string>YOUR_TEAM_ID</string>
-    <key>uploadBitcode</key>
-    <false/>
-    <key>compileBitcode</key>
-    <false/>
 </dict>
 </plist>
 ```
 
+Use `export-archive` when you need a ship-ready artifact rather than just an `.xcarchive`.
+
 ### Upload Command
 
+**Why you use it:** push an exported package to Apple's distribution services from automation instead of manually using Transporter or App Store Connect UI.
+
+**When to use it:** after `export-archive`, once you have an `.ipa`, `.pkg`, or similar uploadable artifact.
+
+**What it runs:** `xcrun altool --upload-app`
+
 ```bash
-# Upload iOS app to App Store/TestFlight
-xctools upload --target ios --app-file-path MyApp.ipa --username developer@example.com --password app-specific-password
+# Upload an iOS build
+xctools upload --target ios --app-file-path MyApp.ipa --username "$APPLE_ID" --password "$APP_SPECIFIC_PASSWORD"
 
-# Upload macOS app to App Store
-xctools upload --target macos --app-file-path MyMacApp.pkg --username developer@example.com --password app-specific-password
-
-# Upload with different file paths
-xctools upload --target ios --app-file-path ./build/MyApp.ipa --username developer@example.com --password app-specific-password
-
-# Upload enterprise distribution
-xctools upload --target ios --app-file-path MyApp-Enterprise.ipa --username enterprise@company.com --password enterprise-password
+# Upload a macOS package
+xctools upload --target macos --app-file-path MyMacApp.pkg --username "$APPLE_ID" --password "$APP_SPECIFIC_PASSWORD"
 ```
 
-The upload command:
-- Uses `xcrun altool` to upload application packages to Apple's distribution platforms
-- Supports both iOS (.ipa) and macOS (.pkg, .dmg) applications
-- Handles authentication using Apple ID credentials
-- Provides detailed output from the upload process
-- Supports App Store, TestFlight, and enterprise distribution workflows
+Use environment variables for `--username` and `--password` so CI logs and shell history do not expose credentials.
 
 ### Notarize Command
 
-```bash
-# Notarize a macOS disk image
-xctools notarize --file-path MyApp.dmg --apple-id developer@example.com \
-    --password app-specific-password --team-id A1B2C3D4E5
+**Why you use it:** satisfy Apple Gatekeeper requirements for macOS apps distributed outside the Mac App Store.
 
-# Notarize a macOS package
-xctools notarize --file-path MyApp.pkg --apple-id developer@example.com \
-    --password app-specific-password --team-id A1B2C3D4E5
+**When to use it:** after exporting a macOS `.dmg`, `.pkg`, or zipped `.app` that will be downloaded directly by users.
+
+**What it runs:** `xcrun notarytool submit --wait` followed by `xcrun stapler staple`
+
+```bash
+# Notarize a DMG
+xctools notarize --file-path MyApp.dmg --apple-id "$APPLE_ID" \
+    --password "$APP_SPECIFIC_PASSWORD" --team-id A1B2C3D4E5
+
+# Notarize a package
+xctools notarize --file-path MyApp.pkg --apple-id "$APPLE_ID" \
+    --password "$APP_SPECIFIC_PASSWORD" --team-id A1B2C3D4E5
 ```
 
-The notarize command:
-- Submits a macOS application (.dmg, .pkg, or zipped .app) to Apple's notarization service using `xcrun notarytool submit --wait`
-- Blocks until notarization completes (typically 1–5 minutes)
-- Staples the resulting notarization ticket to the file using `xcrun stapler staple`
-- Notarization is required to distribute macOS apps outside the Mac App Store on macOS 10.15+
-- Requires an app-specific password generated at <https://appleid.apple.com>
-- Requires Xcode 13 or later
+Use `notarize` for direct macOS distribution. It is usually not part of an iOS release pipeline.
 
 ### Setup Signing Command
 
+**Why you use it:** configure a clean CI machine so `xcodebuild`, `codesign`, and export steps can sign apps non-interactively.
+
+**When to use it:** at the beginning of release jobs that need certificates or provisioning profiles.
+
+**What it does:** creates a dedicated keychain, imports the P12 certificate, unlocks the keychain, and installs any provisioning profiles you pass.
+
 ```bash
-# Import a certificate and install provisioning profiles
+# Import one certificate and two provisioning profiles
 xctools setup-signing \
     --certificate-path signing.p12 \
     --certificate-password "$CERT_PASSWORD" \
     --provisioning-profile AppStore.mobileprovision \
     --provisioning-profile WatchApp.mobileprovision
 
-# Import a certificate only (no provisioning profiles, e.g. Developer ID signing)
+# Import a Developer ID certificate only
 xctools setup-signing \
     --certificate-path DeveloperID.p12 \
     --certificate-password "$CERT_PASSWORD"
 ```
 
-The setup-signing command:
-- Creates a dedicated keychain (`xctools-signing.keychain`) for the build
-- Imports the provided P12 certificate into the keychain
-- Sets the keychain as the default and allows `codesign` to access it without user prompts
-- Copies each provisioning profile to `~/Library/MobileDevice/Provisioning Profiles/`
-- Designed for CI environments where code signing must be configured non-interactively
-- Pass credentials via environment variables (e.g. `$CERT_PASSWORD`) rather than hardcoding
+This command is mainly useful in ephemeral CI environments where no signing state is preconfigured.
 
 ### Bump Version Command
 
+**Why you use it:** update build metadata directly in `project.pbxproj` as part of release automation.
+
+**When to use it:** before archiving or tagging a release when you need to advance `CURRENT_PROJECT_VERSION`, `MARKETING_VERSION`, or both.
+
+**What it changes:** the first `project.pbxproj` it finds under the current directory tree.
+
 ```bash
-# Bump build number only
+# Update build number only
 xctools bump-version --build-number 42
 
-# Bump version number only
+# Update marketing version only
 xctools bump-version --version-number 2.1.0
 
-# Bump both
+# Update both values together
 xctools bump-version --build-number 42 --version-number 2.1.0
 ```
 
+Use `bump-version` when you want versioning to happen inside scripted release steps instead of by hand in Xcode.
+
 ### Acknowledgements Command
 
+**Why you use it:** generate a credits file for shipped apps that includes both Swift Package Manager dependencies and project contributors.
+
+**When to use it:** near the end of a release workflow, or anytime you need to refresh a bundled acknowledgements/credits artifact.
+
+**What it reads:** Xcode DerivedData for Swift package metadata and `git log` for contributor history.
+
 ```bash
-# Generate acknowledgements to a specific file
+# Write to a file
 xctools acknowledgements --app-name MyApp --output ./acknowledgements.json
 
-# Generate acknowledgements to a directory (creates acknowledgements.json)
+# Write into a directory (creates acknowledgements.json)
 xctools acknowledgements --app-name MyApp --output ./output-directory/
 
-# Generate acknowledgements for a specific app
+# Use a custom app name and file name
 xctools acknowledgements --app-name "My iOS App" --output ./Credits.json
 ```
 
-The acknowledgements command:
-- Scans your Swift Package Manager workspace for dependencies
-- Extracts package information including name, license, author, and repository URL
-- Analyzes git commit history to identify project contributors
-- Generates a structured JSON file with all acknowledgements
-- Automatically merges contributors with similar names
-- Sorts contributors alphabetically for consistent output
+Run the app at least once before using this command so the necessary DerivedData package metadata exists.
 
 ## Development
 
